@@ -2,22 +2,30 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <title>Wristband Realtime Monitor</title>
+  <title>DragonLink · 冒险小队实况卷轴</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 使用系统无衬线字体，减少加载依赖 -->
+  <!-- 复古中世纪 + 地图质感 -->
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at top left, #2dd4bf 0, #0f172a 55%);
-      --card-bg: rgba(15, 23, 42, 0.9);
-      --accent: #22d3ee;
-      --accent-soft: rgba(34, 211, 238, 0.15);
-      --danger: #fb7185;
-      --text-main: #f9fafb;
-      --text-muted: #9ca3af;
-      --border-subtle: rgba(148, 163, 184, 0.2);
-      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.7);
-      --radius-xl: 18px;
+      /* 旧羊皮纸和墨水色 */
+      --parchment-bg: #f5e7c6;
+      --parchment-deep: #e2cf9c;
+      --ink-main: #3b2b26;
+      --ink-muted: #7a5c4b;
+      --ink-strong: #5c3d2b;
+
+      /* 色块：冒险队伍 / 巨龙 / 魔法能量 */
+      --block-party: #d79c5b;
+      --block-dragon: #b5523b;
+      --block-magic: #4f7c6b;
+      --block-sky: #6f8fa7;
+
+      --border-dark: #57402e;
+      --border-light: #e0cba0;
+
+      --shadow-soft: 0 16px 40px rgba(70, 40, 20, 0.45);
+      --radius-card: 18px;
     }
 
     * {
@@ -28,118 +36,134 @@
 
     body {
       min-height: 100vh;
-      background: var(--bg-gradient);
-      color: var(--text-main);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, #f4e6c2 0, #e1cf9d 40%, #c7a774 80%),
+        repeating-linear-gradient(135deg, rgba(0,0,0,0.03) 0, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 4px);
+      color: var(--ink-main);
+      font-family: "Times New Roman", "Songti SC", "Noto Serif SC", serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
     }
 
-    .shell {
+    .scroll-shell {
       width: 100%;
       max-width: 1120px;
-      background: linear-gradient(
-          135deg,
-          rgba(148, 163, 184, 0.25),
-          rgba(15, 23, 42, 0.4)
-        ),
-        radial-gradient(circle at top right, rgba(56, 189, 248, 0.4), transparent 55%);
-      border-radius: 28px;
-      padding: 20px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      box-shadow: 0 32px 80px rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(18px);
-    }
-
-    .shell-inner {
-      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.78), rgba(244,225,181,0.95)),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.15) 0, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 3px);
       border-radius: 22px;
-      padding: 22px 24px;
-      border: 1px solid rgba(30, 64, 175, 0.7);
+      border: 2px solid var(--border-dark);
+      box-shadow: var(--shadow-soft);
       position: relative;
       overflow: hidden;
     }
 
-    .shell-inner::before {
+    .scroll-shell::before,
+    .scroll-shell::after {
       content: "";
       position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 55%);
-      opacity: 0.9;
-      pointer-events: none;
+      top: -40px;
+      bottom: -40px;
+      width: 32px;
+      background:
+        radial-gradient(circle at center, #d9b177 0, #8d5b34 65%, #3d2316 100%);
+      box-shadow: inset 0 0 0 3px rgba(237,213,168,0.9);
     }
 
-    .shell-inner-content {
+    .scroll-shell::before {
+      left: -18px;
+      border-radius: 999px;
+    }
+
+    .scroll-shell::after {
+      right: -18px;
+      border-radius: 999px;
+    }
+
+    .scroll-inner {
       position: relative;
-      z-index: 1;
+      padding: 20px 24px 18px;
+      border-left: 1px dashed rgba(87, 64, 46, 0.4);
+      border-right: 1px dashed rgba(87, 64, 46, 0.4);
     }
 
-    .header {
+    .header-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
       gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
       flex-wrap: wrap;
     }
 
     .title-block h1 {
-      font-size: 1.35rem;
-      letter-spacing: 0.04em;
+      font-size: 1.4rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       font-weight: 600;
+      color: var(--ink-strong);
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .title-pill {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      padding: 2px 10px;
+    .title-emblem {
+      font-size: 1.2rem;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      color: var(--text-muted);
+      padding: 6px 10px;
+      background: var(--block-party);
+      color: #24160e;
+      border: 1px solid #6e4623;
+      box-shadow: 0 3px 0 #6e4623;
     }
 
     .subtitle {
       margin-top: 4px;
-      font-size: 0.86rem;
-      color: var(--text-muted);
-      max-width: 460px;
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+      max-width: 480px;
+      line-height: 1.4;
     }
 
-    .status-block {
+    .status-panel {
       display: flex;
       align-items: center;
-      gap: 12px;
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 999px;
+      gap: 10px;
       padding: 8px 14px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+      border-radius: 999px;
+      border: 2px solid var(--border-dark);
+      background:
+        linear-gradient(145deg, #f4e3bf, #e1c99a);
+      box-shadow: 0 6px 0 rgba(87, 64, 46, 0.9);
+      min-width: 230px;
     }
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
+    .status-seal {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: var(--danger);
-      box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.3);
-      transition: background 0.2s ease, box-shadow 0.2s ease;
+      border: 2px solid #3d2316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      background: #b83f33;
+      color: #fef3c7;
+      box-shadow: inset 0 0 0 2px #fcd34d, 0 0 0 3px rgba(0,0,0,0.18);
+      position: relative;
     }
 
-    .status-dot.online {
-      background: #4ade80;
-      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.35);
+    .status-seal::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.25);
     }
 
-    .status-text-rows {
+    .status-texts {
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -147,420 +171,518 @@
 
     .status-main {
       font-size: 0.8rem;
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-strong);
     }
 
     .status-sub {
-      font-size: 0.7rem;
-      color: var(--text-muted);
+      font-size: 0.74rem;
+      color: var(--ink-muted);
     }
 
-    .layout {
+    .status-seal.online {
+      background: #3f7c45;
+      box-shadow: inset 0 0 0 2px #bbf7d0, 0 0 0 3px rgba(0,0,0,0.18);
+    }
+
+    .status-seal.online span {
+      transform: rotate(-10deg);
+    }
+
+    .map-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1px) minmax(0, 1.1fr);
-      gap: 22px;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.05fr);
+      gap: 18px;
       align-items: stretch;
+      margin-top: 12px;
     }
 
-    .divider {
-      width: 1px;
-      background: linear-gradient(
-        to bottom,
-        transparent,
-        rgba(148, 163, 184, 0.6),
-        transparent
-      );
-      opacity: 0.7;
+    @media (max-width: 860px) {
+      .map-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .scroll-inner {
+        padding: 16px 12px;
+      }
     }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius-xl);
-      padding: 16px 16px 14px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-soft);
+    .panel {
+      border-radius: var(--radius-card);
+      border: 2px solid var(--border-dark);
+      background:
+        linear-gradient(145deg, var(--parchment-bg), #f2dfb2);
+      box-shadow: 0 10px 0 rgba(87, 64, 46, 0.9);
       position: relative;
       overflow: hidden;
     }
 
-    .card::before {
+    .panel::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), transparent 60%);
-      opacity: 0.7;
+      background-image:
+        radial-gradient(circle at top left, rgba(180, 120, 70, 0.25), transparent 55%),
+        url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 80 Q80 10 155 80 T305 80' fill='none' stroke='%23d6b47c' stroke-width='1.4' stroke-dasharray='5 4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: cover, 260px 120px;
+      background-position: center, bottom right;
+      opacity: 0.25;
       pointer-events: none;
     }
 
-    .card-inner {
+    .panel-inner {
       position: relative;
       z-index: 1;
+      padding: 12px 14px 12px;
     }
 
-    .card-header {
+    .panel-heading {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       gap: 8px;
     }
 
-    .card-title {
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
+    .panel-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--ink-strong);
     }
 
-    .badge {
-      font-size: 0.7rem;
+    .panel-tag {
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      padding: 2px 9px;
+      letter-spacing: 0.16em;
+      padding: 2px 10px;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: var(--text-muted);
+      border: 1px solid var(--border-dark);
+      background: #fef3c7;
+      color: #b45309;
+      box-shadow: 0 2px 0 #b45309;
+      white-space: nowrap;
     }
 
-    .metric-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
+    .block-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 8px;
       margin-bottom: 10px;
+      align-items: center;
     }
 
-    .metric-main-value {
-      font-size: 2.4rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
+    .hero-metric {
+      background: var(--block-party);
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 2px solid #6b3b1d;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
     }
 
-    .metric-unit {
-      font-size: 0.8rem;
+    .hero-label {
+      font-size: 0.74rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: #3b1f0f;
       margin-bottom: 4px;
     }
 
-    .metric-chip {
-      font-size: 0.72rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(52, 211, 153, 0.7);
-      background: rgba(22, 163, 74, 0.12);
-      color: #bbf7d0;
-    }
-
-    .metric-secondary-row {
+    .hero-main {
+      font-size: 2.1rem;
+      font-weight: 700;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      align-items: flex-end;
+      gap: 6px;
+      color: #1b0f07;
     }
 
-    .metric-secondary-row span strong {
-      color: var(--accent);
-      font-weight: 500;
+    .hero-main span.unit {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 3px;
+      color: #3b1f0f;
     }
 
-    .chart-shell {
+    .hero-side {
+      background: var(--block-magic);
       border-radius: 14px;
-      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.92));
-      border: 1px solid rgba(15, 23, 42, 0.9);
-      padding: 8px 10px 4px;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
+      padding: 8px 10px;
+      border: 2px solid #23453b;
+      color: #ecfdf5;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hero-side strong {
+      font-size: 0.88rem;
+    }
+
+    .hero-side span {
+      color: #bae6fd;
+    }
+
+    .trend-label {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.58);
+      color: #1b4332;
+    }
+
+    .map-frame {
+      border-radius: 14px;
+      border: 2px solid #324152;
+      background: #f9f5e7;
+      padding: 6px 6px 4px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
     }
 
     #chart {
       width: 100%;
-      height: 220px;
+      height: 210px;
     }
 
-    .side-header {
+    .legend-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      color: var(--ink-muted);
     }
 
-    .pill {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--text-muted);
+    .legend-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    .pill span {
-      color: var(--accent);
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .mini-metrics {
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--block-dragon);
+      border: 1px solid rgba(0,0,0,0.35);
+    }
+
+    .legend-dot.alt {
+      background: var(--block-magic);
+    }
+
+    .side-blocks {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
       margin-bottom: 10px;
     }
 
-    .mini-metric {
-      padding: 8px 9px;
+    .mini-block-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .mini-block {
       border-radius: 12px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      border: 2px solid var(--border-dark);
+      padding: 6px 8px 7px;
+      background: #f8ecd0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
       font-size: 0.78rem;
     }
 
     .mini-label {
       font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
+      color: var(--ink-muted);
+      margin-bottom: 2px;
     }
 
     .mini-value {
       font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 600;
+      color: var(--ink-strong);
     }
 
-    .mini-accent {
-      color: var(--accent);
+    .mini-value.alt {
+      color: var(--block-dragon);
     }
 
-    .log {
-      height: 176px;
+    .log-book {
       border-radius: 12px;
-      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      padding: 8px 10px;
-      overflow: auto;
+      border: 2px solid var(--border-dark);
+      background:
+        linear-gradient(160deg, #f6e5bf, #f1d8a2);
+      padding: 6px 8px;
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.74rem;
-      line-height: 1.5;
+      max-height: 184px;
+      overflow: auto;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
     }
 
     .log-entry {
-      opacity: 0.88;
+      margin-bottom: 2px;
+      color: var(--ink-main);
     }
 
-    .log-entry strong {
-      color: var(--accent);
+    .log-entry span.time {
+      color: var(--ink-muted);
     }
 
-    .log-entry span {
-      color: var(--text-muted);
+    .log-entry span.source {
+      color: var(--block-dragon);
+      font-weight: 600;
     }
 
-    @media (max-width: 880px) {
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .divider {
-        display: none;
-      }
-      .shell-inner {
-        padding: 18px 16px;
-      }
-      .metric-main-value {
-        font-size: 2rem;
-      }
-      .chart-shell {
-        padding: 8px 4px 4px;
-      }
+    .log-entry span.text {
+      color: var(--ink-main);
     }
   </style>
 
-  <!-- Chart.js CDN，用来画折线图 -->
+  <!-- Chart.js，用来画“巨龙怒气曲线” -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="shell">
-    <div class="shell-inner">
-      <div class="shell-inner-content">
-        <!-- 顶部标题 & 状态 -->
-        <div class="header">
-          <div class="title-block">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <h1>Wristband Stream</h1>
-              <span class="title-pill">Arduino · BLE · Cloud</span>
-            </div>
-            <p class="subtitle">
-              实时查看从 Arduino 经 Render 云端传输的数据流。可用于远程传感器、交互装置或任何实验性 wearable。
-            </p>
-          </div>
+  <div class="scroll-shell">
+    <div class="scroll-inner">
+      <!-- 顶部：标题 + 状态印章 -->
+      <div class="header-row">
+        <div class="title-block">
+          <h1>
+            <span class="title-emblem">⚔️</span>
+            DRAGONLINK SCROLL
+          </h1>
+          <p class="subtitle">
+            两支远方的冒险小队，通过云端的魔法卷轴互相传递讯息、共享状态。
+            你现在看到的是他们对抗巨龙时的心跳、力量与预兆。
+          </p>
+        </div>
 
-          <div class="status-block">
-            <div id="status-dot" class="status-dot"></div>
-            <div class="status-text-rows">
-              <div id="status-main" class="status-main">Connecting…</div>
-              <div id="status-sub" class="status-sub">Waiting for WebSocket handshake</div>
+        <div class="status-panel">
+          <div id="status-seal" class="status-seal">
+            <span>⏳</span>
+          </div>
+          <div class="status-texts">
+            <div id="status-main" class="status-main">Linking Ritual</div>
+            <div id="status-sub" class="status-sub">正在召唤云端传讯阵法…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 主体：左边巨龙曲线 + 右边队伍与记录 -->
+      <div class="map-grid">
+        <!-- 左：主曲线 & 数值 -->
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="panel-heading">
+              <div class="panel-title">Dragon's Breath Gauge</div>
+              <div class="panel-tag">Live · Enchanted</div>
+            </div>
+
+            <div class="block-row">
+              <div class="hero-metric">
+                <div class="hero-label">CURRENT MYSTIC VALUE</div>
+                <div class="hero-main">
+                  <span id="main-value">--</span>
+                  <span class="unit">sigils</span>
+                </div>
+                <div id="trend-chip" class="trend-label" style="display:none;">
+                  Δ +0
+                </div>
+              </div>
+
+              <div class="hero-side">
+                <div>
+                  <strong>最近变动</strong>
+                  <span id="metric-parsed">—</span>
+                </div>
+                <div>
+                  来源小队：
+                  <span id="last-source">—</span>
+                </div>
+                <div>
+                  最后更新时间：
+                  <span id="last-timestamp">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="map-frame">
+              <canvas id="chart"></canvas>
+              <div class="legend-row">
+                <div class="legend-dots">
+                  <div class="legend-item">
+                    <span class="legend-dot"></span>
+                    <span>龙息强度 / 总体魔力</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot alt"></span>
+                    <span>冒险队伍波动</span>
+                  </div>
+                </div>
+                <div>最近约 2 分钟的魔力形势</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 主布局：左图 + 右侧信息 -->
-        <div class="layout">
-          <!-- 左侧：数值 + 图表 -->
-          <div class="card">
-            <div class="card-inner">
-              <div class="card-header">
-                <div class="card-title">Live Metric</div>
-                <div class="badge">Realtime</div>
-              </div>
-
-              <div class="metric-row">
-                <div class="metric-main-value">
-                  <span id="main-value">--</span>
-                  <span class="metric-unit">units</span>
-                </div>
-                <div id="trend-chip" class="metric-chip" style="display:none;">
-                  +0
-                </div>
-              </div>
-
-              <div class="metric-secondary-row">
-                <span>Last Source: <strong id="last-source">-</strong></span>
-                <span>Last Update: <strong id="last-timestamp">-</strong></span>
-              </div>
-
-              <div class="chart-shell">
-                <canvas id="chart"></canvas>
-              </div>
+        <!-- 右：队伍信息 & 日志 -->
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="panel-heading">
+              <div class="panel-title">Party Ledger</div>
+              <div class="panel-tag">A ↔ B 双向传讯</div>
             </div>
-          </div>
 
-          <!-- 中间分割线 -->
-          <div class="divider"></div>
-
-          <!-- 右侧：小指标 + 日志 -->
-          <div class="card">
-            <div class="card-inner">
-              <div class="side-header">
-                <div class="pill">
-                  Live Console · <span>Cloud Relay</span>
+            <div class="side-blocks">
+              <div class="mini-block-row">
+                <div class="mini-block">
+                  <div class="mini-label">记录的讯息总数</div>
+                  <div class="mini-value alt" id="metric-count">0</div>
+                </div>
+                <div class="mini-block">
+                  <div class="mini-label">最新解析数值</div>
+                  <div class="mini-value" id="metric-parsed-mini">—</div>
                 </div>
               </div>
 
-              <div class="mini-metrics">
-                <div class="mini-metric">
-                  <div class="mini-label">Messages</div>
-                  <div class="mini-value mini-accent" id="metric-count">0</div>
+              <div class="mini-block-row">
+                <div class="mini-block">
+                  <div class="mini-label">最近来自小队</div>
+                  <div class="mini-value" id="metric-last-team">—</div>
                 </div>
-                <div class="mini-metric">
-                  <div class="mini-label">Last Parsed Value</div>
-                  <div class="mini-value" id="metric-parsed">--</div>
+                <div class="mini-block">
+                  <div class="mini-label">最近关键字</div>
+                  <div class="mini-value" id="metric-last-key">—</div>
                 </div>
               </div>
 
-              <div class="log" id="log"></div>
+              <div class="log-book" id="log"></div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
   <script>
-    // -----------------------
-    // WebSocket 连接
-    // -----------------------
+    // ---------------------
+    // WebSocket 设置
+    // ---------------------
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const WS_URL = `${protocol}://${location.host}/ws`;
 
-    const statusDot = document.getElementById("status-dot");
+    const statusSeal = document.getElementById("status-seal");
     const statusMain = document.getElementById("status-main");
     const statusSub = document.getElementById("status-sub");
-    const logEl = document.getElementById("log");
+
     const mainValueEl = document.getElementById("main-value");
+    const trendChipEl = document.getElementById("trend-chip");
+    const metricParsedEl = document.getElementById("metric-parsed");
+    const metricParsedMiniEl = document.getElementById("metric-parsed-mini");
+    const metricCountEl = document.getElementById("metric-count");
     const lastSourceEl = document.getElementById("last-source");
     const lastTimestampEl = document.getElementById("last-timestamp");
-    const metricCountEl = document.getElementById("metric-count");
-    const metricParsedEl = document.getElementById("metric-parsed");
-    const trendChipEl = document.getElementById("trend-chip");
+    const metricLastTeamEl = document.getElementById("metric-last-team");
+    const metricLastKeyEl = document.getElementById("metric-last-key");
+    const logEl = document.getElementById("log");
 
-    let messageCount = 0;
-    let lastNumericValue = null;
+    let msgCount = 0;
+    let lastNumeric = null;
 
-    function setStatus(online, textMain, textSub) {
+    function setStatus(online, mainText, subText) {
       if (online) {
-        statusDot.classList.add("online");
+        statusSeal.classList.add("online");
+        statusSeal.querySelector("span").textContent = "✨";
       } else {
-        statusDot.classList.remove("online");
+        statusSeal.classList.remove("online");
+        statusSeal.querySelector("span").textContent = "⏳";
       }
-      statusMain.textContent = textMain;
-      statusSub.textContent = textSub || "";
+      statusMain.textContent = mainText;
+      statusSub.textContent = subText || "";
     }
 
-    function appendLog(line, isError = false) {
+    function appendLog(time, source, text) {
       const div = document.createElement("div");
       div.className = "log-entry";
-      if (isError) {
-        div.style.color = "#fb7185";
-      }
-      div.innerHTML = line;
+      div.innerHTML =
+        `<span class="time">[${time}]</span> ` +
+        `<span class="source">${source}</span> ` +
+        `<span class="text">→ ${text}</span>`;
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
     }
 
-    // -----------------------
-    // Chart.js 初始化
-    // -----------------------
+    // ---------------------
+    // Chart.js 配置
+    // ---------------------
     const ctx = document.getElementById("chart").getContext("2d");
 
     const chartData = {
       labels: [],
       datasets: [
         {
-          label: "Value",
+          label: "Dragon Breath",
           data: [],
           tension: 0.25,
           borderWidth: 2,
           pointRadius: 0,
           fill: true,
-          backgroundColor: "rgba(56, 189, 248, 0.15)",
-          borderColor: "rgba(56, 189, 248, 1)",
-        },
-      ],
+          borderColor: "#b5523b",
+          backgroundColor: "rgba(181, 82, 59, 0.24)"
+        }
+      ]
     };
 
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: false,
       animation: {
-        duration: 200,
+        duration: 180
       },
       scales: {
         x: {
-          display: false,
+          display: false
         },
         y: {
           grid: {
-            color: "rgba(148, 163, 184, 0.25)",
+            color: "rgba(87,64,46,0.25)"
           },
           ticks: {
-            color: "rgba(209, 213, 219, 0.9)",
+            color: "#5c3d2b",
             font: {
-              size: 10,
-            },
-          },
-        },
+              size: 10
+            }
+          }
+        }
       },
       plugins: {
-        legend: {
-          display: false,
-        },
-      },
+        legend: { display: false }
+      }
     };
 
-    const chartInstance = new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: "line",
       data: chartData,
-      options: chartOptions,
+      options: chartOptions
     });
 
     function pushChartValue(v) {
@@ -569,7 +691,7 @@
         hour12: false,
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
+        second: "2-digit"
       });
 
       chartData.labels.push(nowLabel);
@@ -580,97 +702,92 @@
         chartData.datasets[0].data.shift();
       }
 
-      chartInstance.update("none");
+      chart.update("none");
     }
 
-    // -----------------------
-    // 解析数据：支持 "A:123" 或 "123" 之类
-    // -----------------------
-    function parseNumericValue(text) {
-      // 提取最后一个数字
+    // ---------------------
+    // 数据解析：支持 "A:123" / "B:45" / "A:ON" 之类
+    // ---------------------
+    function parseNumeric(text) {
       const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
       if (!match) return null;
       return parseFloat(match[1]);
     }
 
-    // -----------------------
-    // 建立 WebSocket 连接
-    // -----------------------
-    function connectWebSocket() {
-      appendLog(`<span>[INFO]</span> Connecting to <strong>${WS_URL}</strong>...`);
-      setStatus(false, "Connecting…", WS_URL);
+    function guessTeam(text) {
+      const m = text.match(/^([A-Za-z0-9]+):/);
+      if (!m) return "未知小队";
+      if (m[1] === "A") return "小队 A";
+      if (m[1] === "B") return "小队 B";
+      return m[1];
+    }
+
+    function guessKeyWord(text) {
+      const parts = text.split(":");
+      if (parts.length <= 1) return text.slice(0, 12) || "—";
+      return parts.slice(1).join(":").trim().slice(0, 12) || "—";
+    }
+
+    // ---------------------
+    // WebSocket 连接逻辑
+    // ---------------------
+    function connectWS() {
+      setStatus(false, "Linking Ritual", "正在召唤云端传讯阵法…");
 
       const ws = new WebSocket(WS_URL);
 
       ws.addEventListener("open", () => {
-        setStatus(true, "Online", "Streaming via Render WebSocket");
-        appendLog(`<span>[INFO]</span> <strong>Connected</strong> to relay.`);
+        setStatus(true, "Link Established", "传讯阵法已就绪，聆听巨龙与小队的脉动。");
       });
 
       ws.addEventListener("message", (event) => {
         const text = event.data;
-        messageCount += 1;
-        metricCountEl.textContent = messageCount.toString();
-
         const now = new Date();
-        const tsStr = now.toLocaleTimeString("en-GB", { hour12: false });
+        const timeStr = now.toLocaleTimeString("en-GB", { hour12: false });
 
-        // 尝试解析数字
-        const val = parseNumericValue(text);
+        msgCount += 1;
+        metricCountEl.textContent = msgCount.toString();
+
+        const team = guessTeam(text);
+        const key = guessKeyWord(text);
+        metricLastTeamEl.textContent = team;
+        metricLastKeyEl.textContent = key;
+
+        const val = parseNumeric(text);
         if (val !== null) {
           mainValueEl.textContent = val.toFixed(0);
-          metricParsedEl.textContent = val.toFixed(2);
+          metricParsedEl.textContent = `${val.toFixed(2)} sigils`;
+          metricParsedMiniEl.textContent = val.toFixed(2);
+          lastTimestampEl.textContent = timeStr;
+          lastSourceEl.textContent = team;
           pushChartValue(val);
 
-          if (lastNumericValue !== null) {
-            const diff = val - lastNumericValue;
-            trendChipEl.style.display = "inline-flex";
-            trendChipEl.textContent =
-              (diff >= 0 ? "+" : "") + diff.toFixed(2);
-            trendChipEl.style.borderColor = diff >= 0 ? "rgba(52, 211, 153, 0.7)" : "rgba(248, 113, 113, 0.7)";
-            trendChipEl.style.background =
-              diff >= 0
-                ? "rgba(22, 163, 74, 0.14)"
-                : "rgba(127, 29, 29, 0.28)";
+          if (lastNumeric !== null) {
+            const diff = val - lastNumeric;
+            const sign = diff >= 0 ? "+" : "";
+            trendChipEl.style.display = "inline-block";
+            trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)}`;
           }
-
-          lastNumericValue = val;
+          lastNumeric = val;
         } else {
-          metricParsedEl.textContent = "--";
+          metricParsedEl.textContent = "—";
+          metricParsedMiniEl.textContent = "—";
         }
 
-        // 尝试从文本中猜数据来源（比如以 "A:" 开头）
-        let source = "unknown";
-        const sourceMatch = text.match(/^([A-Za-z0-9]+):/);
-        if (sourceMatch) {
-          source = sourceMatch[1];
-        }
-        lastSourceEl.textContent = source;
-        lastTimestampEl.textContent = tsStr;
-
-        appendLog(
-          `<span>[${tsStr}]</span> <strong>${source}</strong> → ${text}`
-        );
+        appendLog(timeStr, team, text);
       });
 
       ws.addEventListener("close", () => {
-        setStatus(false, "Disconnected", "Tap to retry in a moment");
-        appendLog(
-          `<span>[WARN]</span> WebSocket closed. Reconnecting in 3s...`,
-          true
-        );
-        setTimeout(connectWebSocket, 3000);
+        setStatus(false, "Link Lost", "阵法破碎，将在数秒后重新描绘魔法阵…");
+        setTimeout(connectWS, 3000);
       });
 
-      ws.addEventListener("error", (err) => {
-        appendLog(
-          `<span>[ERROR]</span> ${err?.message || "WebSocket error"}`,
-          true
-        );
+      ws.addEventListener("error", () => {
+        setStatus(false, "Ritual Error", "魔力紊乱，请稍后再试。");
       });
     }
 
-    connectWebSocket();
+    connectWS();
   </script>
 </body>
 </html>
