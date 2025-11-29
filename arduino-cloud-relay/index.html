@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Wristband Realtime Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- 使用系统无衬线字体，减少加载依赖 -->
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at top left, #2dd4bf 0, #0f172a 55%);
+      --card-bg: rgba(15, 23, 42, 0.9);
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.15);
+      --danger: #fb7185;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border-subtle: rgba(148, 163, 184, 0.2);
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.7);
+      --radius-xl: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1120px;
+      background: linear-gradient(
+          135deg,
+          rgba(148, 163, 184, 0.25),
+          rgba(15, 23, 42, 0.4)
+        ),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.4), transparent 55%);
+      border-radius: 28px;
+      padding: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 32px 80px rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(18px);
+    }
+
+    .shell-inner {
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
+      border-radius: 22px;
+      padding: 22px 24px;
+      border: 1px solid rgba(30, 64, 175, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shell-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .shell-inner-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title-block h1 {
+      font-size: 1.35rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-pill {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      max-width: 460px;
+    }
+
+    .status-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 999px;
+      padding: 8px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.3);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .status-dot.online {
+      background: #4ade80;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.35);
+    }
+
+    .status-text-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-main {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1px) minmax(0, 1.1fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .divider {
+      width: 1px;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(148, 163, 184, 0.6),
+        transparent
+      );
+      opacity: 0.7;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-xl);
+      padding: 16px 16px 14px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), transparent 60%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+    }
+
+    .metric-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .metric-main-value {
+      font-size: 2.4rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .metric-unit {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .metric-chip {
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.7);
+      background: rgba(22, 163, 74, 0.12);
+      color: #bbf7d0;
+    }
+
+    .metric-secondary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .metric-secondary-row span strong {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .chart-shell {
+      border-radius: 14px;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.92));
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      padding: 8px 10px 4px;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
+    }
+
+    #chart {
+      width: 100%;
+      height: 220px;
+    }
+
+    .side-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .pill {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+
+    .pill span {
+      color: var(--accent);
+    }
+
+    .mini-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .mini-metric {
+      padding: 8px 9px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.78rem;
+    }
+
+    .mini-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .mini-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .mini-accent {
+      color: var(--accent);
+    }
+
+    .log {
+      height: 176px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 8px 10px;
+      overflow: auto;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      opacity: 0.88;
+    }
+
+    .log-entry strong {
+      color: var(--accent);
+    }
+
+    .log-entry span {
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 880px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .divider {
+        display: none;
+      }
+      .shell-inner {
+        padding: 18px 16px;
+      }
+      .metric-main-value {
+        font-size: 2rem;
+      }
+      .chart-shell {
+        padding: 8px 4px 4px;
+      }
+    }
+  </style>
+
+  <!-- Chart.js CDN，用来画折线图 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <div class="shell-inner">
+      <div class="shell-inner-content">
+        <!-- 顶部标题 & 状态 -->
+        <div class="header">
+          <div class="title-block">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <h1>Wristband Stream</h1>
+              <span class="title-pill">Arduino · BLE · Cloud</span>
+            </div>
+            <p class="subtitle">
+              实时查看从 Arduino 经 Render 云端传输的数据流。可用于远程传感器、交互装置或任何实验性 wearable。
+            </p>
+          </div>
+
+          <div class="status-block">
+            <div id="status-dot" class="status-dot"></div>
+            <div class="status-text-rows">
+              <div id="status-main" class="status-main">Connecting…</div>
+              <div id="status-sub" class="status-sub">Waiting for WebSocket handshake</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 主布局：左图 + 右侧信息 -->
+        <div class="layout">
+          <!-- 左侧：数值 + 图表 -->
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-header">
+                <div class="card-title">Live Metric</div>
+                <div class="badge">Realtime</div>
+              </div>
+
+              <div class="metric-row">
+                <div class="metric-main-value">
+                  <span id="main-value">--</span>
+                  <span class="metric-unit">units</span>
+                </div>
+                <div id="trend-chip" class="metric-chip" style="display:none;">
+                  +0
+                </div>
+              </div>
+
+              <div class="metric-secondary-row">
+                <span>Last Source: <strong id="last-source">-</strong></span>
+                <span>Last Update: <strong id="last-timestamp">-</strong></span>
+              </div>
+
+              <div class="chart-shell">
+                <canvas id="chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 中间分割线 -->
+          <div class="divider"></div>
+
+          <!-- 右侧：小指标 + 日志 -->
+          <div class="card">
+            <div class="card-inner">
+              <div class="side-header">
+                <div class="pill">
+                  Live Console · <span>Cloud Relay</span>
+                </div>
+              </div>
+
+              <div class="mini-metrics">
+                <div class="mini-metric">
+                  <div class="mini-label">Messages</div>
+                  <div class="mini-value mini-accent" id="metric-count">0</div>
+                </div>
+                <div class="mini-metric">
+                  <div class="mini-label">Last Parsed Value</div>
+                  <div class="mini-value" id="metric-parsed">--</div>
+                </div>
+              </div>
+
+              <div class="log" id="log"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------
+    // WebSocket 连接
+    // -----------------------
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const WS_URL = `${protocol}://${location.host}/ws`;
+
+    const statusDot = document.getElementById("status-dot");
+    const statusMain = document.getElementById("status-main");
+    const statusSub = document.getElementById("status-sub");
+    const logEl = document.getElementById("log");
+    const mainValueEl = document.getElementById("main-value");
+    const lastSourceEl = document.getElementById("last-source");
+    const lastTimestampEl = document.getElementById("last-timestamp");
+    const metricCountEl = document.getElementById("metric-count");
+    const metricParsedEl = document.getElementById("metric-parsed");
+    const trendChipEl = document.getElementById("trend-chip");
+
+    let messageCount = 0;
+    let lastNumericValue = null;
+
+    function setStatus(online, textMain, textSub) {
+      if (online) {
+        statusDot.classList.add("online");
+      } else {
+        statusDot.classList.remove("online");
+      }
+      statusMain.textContent = textMain;
+      statusSub.textContent = textSub || "";
+    }
+
+    function appendLog(line, isError = false) {
+      const div = document.createElement("div");
+      div.className = "log-entry";
+      if (isError) {
+        div.style.color = "#fb7185";
+      }
+      div.innerHTML = line;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // -----------------------
+    // Chart.js 初始化
+    // -----------------------
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    const chartData = {
+      labels: [],
+      datasets: [
+        {
+          label: "Value",
+          data: [],
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          backgroundColor: "rgba(56, 189, 248, 0.15)",
+          borderColor: "rgba(56, 189, 248, 1)",
+        },
+      ],
+    };
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 200,
+      },
+      scales: {
+        x: {
+          display: false,
+        },
+        y: {
+          grid: {
+            color: "rgba(148, 163, 184, 0.25)",
+          },
+          ticks: {
+            color: "rgba(209, 213, 219, 0.9)",
+            font: {
+              size: 10,
+            },
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+    };
+
+    const chartInstance = new Chart(ctx, {
+      type: "line",
+      data: chartData,
+      options: chartOptions,
+    });
+
+    function pushChartValue(v) {
+      const MAX_POINTS = 120;
+      const nowLabel = new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      chartData.labels.push(nowLabel);
+      chartData.datasets[0].data.push(v);
+
+      if (chartData.labels.length > MAX_POINTS) {
+        chartData.labels.shift();
+        chartData.datasets[0].data.shift();
+      }
+
+      chartInstance.update("none");
+    }
+
+    // -----------------------
+    // 解析数据：支持 "A:123" 或 "123" 之类
+    // -----------------------
+    function parseNumericValue(text) {
+      // 提取最后一个数字
+      const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
+      if (!match) return null;
+      return parseFloat(match[1]);
+    }
+
+    // -----------------------
+    // 建立 WebSocket 连接
+    // -----------------------
+    function connectWebSocket() {
+      appendLog(`<span>[INFO]</span> Connecting to <strong>${WS_URL}</strong>...`);
+      setStatus(false, "Connecting…", WS_URL);
+
+      const ws = new WebSocket(WS_URL);
+
+      ws.addEventListener("open", () => {
+        setStatus(true, "Online", "Streaming via Render WebSocket");
+        appendLog(`<span>[INFO]</span> <strong>Connected</strong> to relay.`);
+      });
+
+      ws.addEventListener("message", (event) => {
+        const text = event.data;
+        messageCount += 1;
+        metricCountEl.textContent = messageCount.toString();
+
+        const now = new Date();
+        const tsStr = now.toLocaleTimeString("en-GB", { hour12: false });
+
+        // 尝试解析数字
+        const val = parseNumericValue(text);
+        if (val !== null) {
+          mainValueEl.textContent = val.toFixed(0);
+          metricParsedEl.textContent = val.toFixed(2);
+          pushChartValue(val);
+
+          if (lastNumericValue !== null) {
+            const diff = val - lastNumericValue;
+            trendChipEl.style.display = "inline-flex";
+            trendChipEl.textContent =
+              (diff >= 0 ? "+" : "") + diff.toFixed(2);
+            trendChipEl.style.borderColor = diff >= 0 ? "rgba(52, 211, 153, 0.7)" : "rgba(248, 113, 113, 0.7)";
+            trendChipEl.style.background =
+              diff >= 0
+                ? "rgba(22, 163, 74, 0.14)"
+                : "rgba(127, 29, 29, 0.28)";
+          }
+
+          lastNumericValue = val;
+        } else {
+          metricParsedEl.textContent = "--";
+        }
+
+        // 尝试从文本中猜数据来源（比如以 "A:" 开头）
+        let source = "unknown";
+        const sourceMatch = text.match(/^([A-Za-z0-9]+):/);
+        if (sourceMatch) {
+          source = sourceMatch[1];
+        }
+        lastSourceEl.textContent = source;
+        lastTimestampEl.textContent = tsStr;
+
+        appendLog(
+          `<span>[${tsStr}]</span> <strong>${source}</strong> → ${text}`
+        );
+      });
+
+      ws.addEventListener("close", () => {
+        setStatus(false, "Disconnected", "Tap to retry in a moment");
+        appendLog(
+          `<span>[WARN]</span> WebSocket closed. Reconnecting in 3s...`,
+          true
+        );
+        setTimeout(connectWebSocket, 3000);
+      });
+
+      ws.addEventListener("error", (err) => {
+        appendLog(
+          `<span>[ERROR]</span> ${err?.message || "WebSocket error"}`,
+          true
+        );
+      });
+    }
+
+    connectWebSocket();
+  </script>
+</body>
+</html>
