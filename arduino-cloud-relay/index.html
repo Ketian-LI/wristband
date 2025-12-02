@@ -5,7 +5,6 @@
   <title>DragonLink · Live Party Chronicle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Vintage medieval + map-like feel -->
   <style>
     :root {
       --parchment-bg: #f5e7c6;
@@ -42,7 +41,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
 
     .scroll-shell {
@@ -56,6 +55,10 @@
       box-shadow: var(--shadow-soft);
       position: relative;
       overflow: hidden;
+
+      /* 🔒 整个卷轴在 16:10 屏里不会被拉太长 */
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .scroll-shell::before,
@@ -352,7 +355,8 @@
     }
 
     .chart-section {
-      height: 130px;          /* 固定高度 */
+      height: 130px;      /* 固定高度 */
+      flex: 0 0 130px;    /* 不允许拉伸/缩放，防止撑高页面 */
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -368,7 +372,7 @@
     #chartA,
     #chartB {
       width: 100%;
-      height: 100%;
+      height: 100%;       /* 只占用 chart-section */
     }
 
     .legend-row {
@@ -427,7 +431,7 @@
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.74rem;
-      height: 160px;
+      height: 160px;          /* 固定高度，内部滚动 */
       overflow: auto;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
     }
@@ -470,7 +474,6 @@
     }
   </style>
 
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -500,7 +503,7 @@
       </div>
 
       <div class="map-grid">
-        <!-- 左侧：两个上下堆叠的图表 -->
+        <!-- 左：两个图表 -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
@@ -549,14 +552,14 @@
               </div>
 
               <div class="legend-row">
-                <div>Y range fixed: -50 ~ 50</div>
+                <div>Y-range fixed: -50 ~ 50</div>
                 <div>Approx. last 2 minutes</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右侧：信息 + 两列日志 -->
+        <!-- 右：指标 + A/B 日志 -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
@@ -608,6 +611,7 @@
                   <div class="log-book" id="log-B"></div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -618,9 +622,6 @@
   </div>
 
   <script>
-    // ---------------------
-    // WebSocket settings
-    // ---------------------
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const WS_URL = `${protocol}://${location.host}/ws`;
 
@@ -676,13 +677,10 @@
       while (target.children.length > MAX_LOG_LINES) {
         target.removeChild(target.firstChild);
       }
-
       target.scrollTop = target.scrollHeight;
     }
 
-    // ---------------------
-    // Chart.js: 两张独立图表（A 和 B）
-    // ---------------------
+    // ----- Chart.js: 两张图（A / B） -----
     const ctxA = document.getElementById("chartA").getContext("2d");
     const ctxB = document.getElementById("chartB").getContext("2d");
 
@@ -725,8 +723,8 @@
       scales: {
         x: { display: false },
         y: {
-          min: -50,             // 固定最小值
-          max: 50,              // 固定最大值
+          min: -50,
+          max: 50,
           grid: { color: "rgba(87,64,46,0.25)" },
           ticks: {
             color: "#5c3d2b",
@@ -770,7 +768,6 @@
       if (roleKey === "A") {
         chartDataA.labels.push(nowLabel);
         chartDataA.datasets[0].data.push(v);
-
         if (chartDataA.labels.length > MAX_POINTS) {
           chartDataA.labels.shift();
           chartDataA.datasets[0].data.shift();
@@ -779,7 +776,6 @@
       } else if (roleKey === "B") {
         chartDataB.labels.push(nowLabel);
         chartDataB.datasets[0].data.push(v);
-
         if (chartDataB.labels.length > MAX_POINTS) {
           chartDataB.labels.shift();
           chartDataB.datasets[0].data.shift();
@@ -788,9 +784,7 @@
       }
     }
 
-    // ---------------------
-    // Helpers
-    // ---------------------
+    // ----- 辅助函数 -----
     function parseNumeric(text) {
       const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
       if (!match) return null;
@@ -809,9 +803,7 @@
       return parts.slice(1).join(":").trim().slice(0, 12) || "—";
     }
 
-    // ---------------------
-    // WebSocket connection
-    // ---------------------
+    // ----- WebSocket -----
     function connectWS() {
       setStatus(false, "Linking Ritual", "Summoning the cloud relay circle…");
 
@@ -826,7 +818,7 @@
         let role = "Unknown";
         let text = raw;
 
-        // 优先尝试 JSON：{ role: "A"/"B", data: "..." }
+        // 优先尝试 JSON: { role: "A"/"B", data: "..." }
         try {
           const obj = JSON.parse(raw);
           if (obj && typeof obj === "object" && "data" in obj) {
@@ -834,10 +826,9 @@
             if (obj.role) role = String(obj.role);
           }
         } catch (e) {
-          // 不是 JSON，就当纯文本
+          // 不是 JSON，就当作纯文本
         }
 
-        // 统一成 A / B / Unknown
         let roleKey = "Unknown";
         if (role === "A" || role === "UNO_R4_A") roleKey = "A";
         else if (role === "B" || role === "UNO_R4_B") roleKey = "B";
