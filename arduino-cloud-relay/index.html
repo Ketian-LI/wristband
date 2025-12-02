@@ -8,14 +8,12 @@
   <!-- Vintage medieval + map-like feel -->
   <style>
     :root {
-      /* Old parchment & ink */
       --parchment-bg: #f5e7c6;
       --parchment-deep: #e2cf9c;
       --ink-main: #3b2b26;
       --ink-muted: #7a5c4b;
       --ink-strong: #5c3d2b;
 
-      /* Color blocks: party / dragon / magic / sky */
       --block-party: #d79c5b;
       --block-dragon: #b5523b;
       --block-magic: #4f7c6b;
@@ -432,7 +430,7 @@
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.74rem;
-      height: 184px;              /* FIXED height: panel won’t grow with more data */
+      height: 160px;
       overflow: auto;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
     }
@@ -453,6 +451,26 @@
 
     .log-entry span.text {
       color: var(--ink-main);
+    }
+
+    /* 新增：左右两列日志布局 */
+    .party-logs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .party-column {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .party-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--ink-muted);
     }
   </style>
 
@@ -530,11 +548,11 @@
                 <div class="legend-dots">
                   <div class="legend-item">
                     <span class="legend-dot"></span>
-                    <span>Dragon breath / total arcane power</span>
+                    <span>Party A channel</span>
                   </div>
                   <div class="legend-item">
                     <span class="legend-dot alt"></span>
-                    <span>Party fluctuations</span>
+                    <span>Party B channel</span>
                   </div>
                 </div>
                 <div>Approx. last 2 minutes of arcane state</div>
@@ -565,19 +583,40 @@
 
               <div class="mini-block-row">
                 <div class="mini-block">
-                  <div class="mini-label">Last party</div>
-                  <div class="mini-value" id="metric-last-team">—</div>
+                  <div class="mini-label">Messages from A</div>
+                  <div class="mini-value" id="metric-count-A">0</div>
                 </div>
+                <div class="mini-block">
+                  <div class="mini-label">Messages from B</div>
+                  <div class="mini-value" id="metric-count-B">0</div>
+                </div>
+              </div>
+
+              <div class="mini-block-row">
                 <div class="mini-block">
                   <div class="mini-label">Last keyword</div>
                   <div class="mini-value" id="metric-last-key">—</div>
                 </div>
+                <div class="mini-block">
+                  <div class="mini-label">Last party heard from</div>
+                  <div class="mini-value" id="metric-last-team">—</div>
+                </div>
               </div>
 
-              <div class="log-book" id="log"></div>
+              <div class="party-logs">
+                <div class="party-column">
+                  <div class="party-title">Party A log</div>
+                  <div class="log-book" id="log-A"></div>
+                </div>
+                <div class="party-column">
+                  <div class="party-title">Party B log</div>
+                  <div class="log-book" id="log-B"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
       </div>
 
     </div>
@@ -598,15 +637,22 @@
     const trendChipEl = document.getElementById("trend-chip");
     const metricParsedEl = document.getElementById("metric-parsed");
     const metricParsedMiniEl = document.getElementById("metric-parsed-mini");
-    const metricCountEl = document.getElementById("metric-count");
+
+    const metricCountTotalEl = document.getElementById("metric-count");
+    const metricCountAEl = document.getElementById("metric-count-A");
+    const metricCountBEl = document.getElementById("metric-count-B");
+
     const lastSourceEl = document.getElementById("last-source");
     const lastTimestampEl = document.getElementById("last-timestamp");
-    const metricLastTeamEl = document.getElementById("metric-last-team");
     const metricLastKeyEl = document.getElementById("metric-last-key");
-    const logEl = document.getElementById("log");
+    const metricLastTeamEl = document.getElementById("metric-last-team");
 
-    let msgCount = 0;
-    let lastNumeric = null;
+    const logAEl = document.getElementById("log-A");
+    const logBEl = document.getElementById("log-B");
+
+    let msgCountTotal = 0;
+    const msgCountByRole = { A: 0, B: 0 };
+    const lastNumericByRole = { A: null, B: null };
 
     function setStatus(online, mainText, subText) {
       if (online) {
@@ -620,26 +666,27 @@
       statusSub.textContent = subText || "";
     }
 
-    function appendLog(time, source, text) {
+    function appendLog(roleKey, time, text) {
+      const target = roleKey === "B" ? logBEl : logAEl;
       const div = document.createElement("div");
       div.className = "log-entry";
+      const label = roleKey === "A" ? "A" : (roleKey === "B" ? "B" : "?");
       div.innerHTML =
         `<span class="time">[${time}]</span> ` +
-        `<span class="source">${source}</span> ` +
+        `<span class="source">${label}</span> ` +
         `<span class="text">→ ${text}</span>`;
-      logEl.appendChild(div);
+      target.appendChild(div);
 
-      // Limit the max log lines to 50; remove the oldest when exceeded
       const MAX_LOG_LINES = 50;
-      while (logEl.children.length > MAX_LOG_LINES) {
-        logEl.removeChild(logEl.firstChild);
+      while (target.children.length > MAX_LOG_LINES) {
+        target.removeChild(target.firstChild);
       }
 
-      logEl.scrollTop = logEl.scrollHeight;
+      target.scrollTop = target.scrollHeight;
     }
 
     // ---------------------
-    // Chart.js config
+    // Chart.js config: 2 datasets (A / B)
     // ---------------------
     const ctx = document.getElementById("chart").getContext("2d");
 
@@ -647,7 +694,7 @@
       labels: [],
       datasets: [
         {
-          label: "Dragon Breath",
+          label: "Party A",
           data: [],
           tension: 0.25,
           borderWidth: 2,
@@ -655,6 +702,16 @@
           fill: true,
           borderColor: "#b5523b",
           backgroundColor: "rgba(181, 82, 59, 0.24)"
+        },
+        {
+          label: "Party B",
+          data: [],
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          borderColor: "#4f7c6b",
+          backgroundColor: "rgba(79, 124, 107, 0.24)"
         }
       ]
     };
@@ -692,7 +749,9 @@
       options: chartOptions
     });
 
-    function pushChartValue(v) {
+    function pushChartValue(roleKey, v) {
+      if (v === null || isNaN(v)) return;
+
       const MAX_POINTS = 120;
       const nowLabel = new Date().toLocaleTimeString("en-GB", {
         hour12: false,
@@ -702,18 +761,25 @@
       });
 
       chartData.labels.push(nowLabel);
-      chartData.datasets[0].data.push(v);
+
+      const idx = roleKey === "B" ? 1 : 0;
+      const valA = idx === 0 ? v : null;
+      const valB = idx === 1 ? v : null;
+
+      chartData.datasets[0].data.push(valA);
+      chartData.datasets[1].data.push(valB);
 
       if (chartData.labels.length > MAX_POINTS) {
         chartData.labels.shift();
         chartData.datasets[0].data.shift();
+        chartData.datasets[1].data.shift();
       }
 
       chart.update("none");
     }
 
     // ---------------------
-    // Parse data: supports "A:123" / "B:45" / "A:ON" etc.
+    // Helpers to parse data text
     // ---------------------
     function parseNumeric(text) {
       const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
@@ -721,12 +787,10 @@
       return parseFloat(match[1]);
     }
 
-    function guessTeam(text) {
-      const m = text.match(/^([A-Za-z0-9]+):/);
-      if (!m) return "Unknown party";
-      if (m[1] === "A") return "Party A";
-      if (m[1] === "B") return "Party B";
-      return m[1];
+    function mapRoleToTeamLabel(role) {
+      if (role === "A") return "Party A";
+      if (role === "B") return "Party B";
+      return role || "Unknown party";
     }
 
     function guessKeyWord(text) {
@@ -748,40 +812,73 @@
       });
 
       ws.addEventListener("message", (event) => {
-        const text = event.data;
+        const raw = event.data;
+        let role = "Unknown";
+        let text = raw;
+
+        // 优先尝试 JSON 格式：{ role: "A"/"B", data: "0,0,0,..." }
+        try {
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === "object" && "data" in obj) {
+            text = String(obj.data);
+            if (obj.role) role = String(obj.role);
+          }
+        } catch (e) {
+          // 不是 JSON，就当普通文本
+        }
+
+        // 归一化 roleKey：只关心 A / B，其他归 Unknown
+        let roleKey = "Unknown";
+        if (role === "A" || role === "UNO_R4_A") roleKey = "A";
+        else if (role === "B" || role === "UNO_R4_B") roleKey = "B";
+
         const now = new Date();
         const timeStr = now.toLocaleTimeString("en-GB", { hour12: false });
 
-        msgCount += 1;
-        metricCountEl.textContent = msgCount.toString();
+        // 计数
+        msgCountTotal += 1;
+        metricCountTotalEl.textContent = msgCountTotal.toString();
 
-        const team = guessTeam(text);
-        const key = guessKeyWord(text);
-        metricLastTeamEl.textContent = team;
-        metricLastKeyEl.textContent = key;
+        if (roleKey === "A" || roleKey === "B") {
+          msgCountByRole[roleKey] += 1;
+          if (roleKey === "A") {
+            metricCountAEl.textContent = msgCountByRole.A.toString();
+          } else {
+            metricCountBEl.textContent = msgCountByRole.B.toString();
+          }
+        }
 
+        // 解析数值
         const val = parseNumeric(text);
+        const teamLabel = mapRoleToTeamLabel(roleKey === "Unknown" ? role : roleKey);
+        const key = guessKeyWord(text);
+
+        metricLastKeyEl.textContent = key;
+        metricLastTeamEl.textContent = teamLabel;
+        lastSourceEl.textContent = teamLabel;
+        lastTimestampEl.textContent = timeStr;
+
         if (val !== null) {
           mainValueEl.textContent = val.toFixed(0);
           metricParsedEl.textContent = `${val.toFixed(2)} sigils`;
           metricParsedMiniEl.textContent = val.toFixed(2);
-          lastTimestampEl.textContent = timeStr;
-          lastSourceEl.textContent = team;
-          pushChartValue(val);
 
-          if (lastNumeric !== null) {
-            const diff = val - lastNumeric;
+          const prev = lastNumericByRole[roleKey] ?? null;
+          if (prev !== null) {
+            const diff = val - prev;
             const sign = diff >= 0 ? "+" : "";
             trendChipEl.style.display = "inline-block";
-            trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)}`;
+            trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)} (${roleKey || "?"})`;
           }
-          lastNumeric = val;
+          lastNumericByRole[roleKey] = val;
+
+          pushChartValue(roleKey, val);
         } else {
           metricParsedEl.textContent = "—";
           metricParsedMiniEl.textContent = "—";
         }
 
-        appendLog(timeStr, team, text);
+        appendLog(roleKey, timeStr, text);
       });
 
       ws.addEventListener("close", () => {
