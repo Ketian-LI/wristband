@@ -1,21 +1,21 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DragonLink · 冒险小队实况卷轴</title>
+  <title>DragonLink · Live Party Chronicle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 复古中世纪 + 地图质感 -->
+  <!-- Vintage medieval + map-like feel -->
   <style>
     :root {
-      /* 旧羊皮纸和墨水色 */
+      /* Old parchment & ink */
       --parchment-bg: #f5e7c6;
       --parchment-deep: #e2cf9c;
       --ink-main: #3b2b26;
       --ink-muted: #7a5c4b;
       --ink-strong: #5c3d2b;
 
-      /* 色块：冒险队伍 / 巨龙 / 魔法能量 */
+      /* Color blocks: party / dragon / magic / sky */
       --block-party: #d79c5b;
       --block-dragon: #b5523b;
       --block-magic: #4f7c6b;
@@ -432,7 +432,7 @@
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.74rem;
-      max-height: 184px;
+      height: 184px;              /* FIXED height: panel won’t grow with more data */
       overflow: auto;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
     }
@@ -456,13 +456,13 @@
     }
   </style>
 
-  <!-- Chart.js，用来画“巨龙怒气曲线” -->
+  <!-- Chart.js for the dragon anger curve -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="scroll-shell">
     <div class="scroll-inner">
-      <!-- 顶部：标题 + 状态印章 -->
+      <!-- Header: title + status seal -->
       <div class="header-row">
         <div class="title-block">
           <h1>
@@ -470,8 +470,8 @@
             DRAGONLINK SCROLL
           </h1>
           <p class="subtitle">
-            两支远方的冒险小队，通过云端的魔法卷轴互相传递讯息、共享状态。
-            你现在看到的是他们对抗巨龙时的心跳、力量与预兆。
+            Two distant adventuring parties share their status through a cloud-borne magic scroll.
+            You are now watching their heartbeat, strength, and omens as they face the dragon.
           </p>
         </div>
 
@@ -481,14 +481,14 @@
           </div>
           <div class="status-texts">
             <div id="status-main" class="status-main">Linking Ritual</div>
-            <div id="status-sub" class="status-sub">正在召唤云端传讯阵法…</div>
+            <div id="status-sub" class="status-sub">Summoning the cloud relay circle…</div>
           </div>
         </div>
       </div>
 
-      <!-- 主体：左边巨龙曲线 + 右边队伍与记录 -->
+      <!-- Main: left dragon curve + right party & log -->
       <div class="map-grid">
-        <!-- 左：主曲线 & 数值 -->
+        <!-- Left: main curve & metrics -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
@@ -510,15 +510,15 @@
 
               <div class="hero-side">
                 <div>
-                  <strong>最近变动</strong>
+                  <strong>Latest change</strong>
                   <span id="metric-parsed">—</span>
                 </div>
                 <div>
-                  来源小队：
+                  Source party:
                   <span id="last-source">—</span>
                 </div>
                 <div>
-                  最后更新时间：
+                  Last update:
                   <span id="last-timestamp">—</span>
                 </div>
               </div>
@@ -530,46 +530,46 @@
                 <div class="legend-dots">
                   <div class="legend-item">
                     <span class="legend-dot"></span>
-                    <span>龙息强度 / 总体魔力</span>
+                    <span>Dragon breath / total arcane power</span>
                   </div>
                   <div class="legend-item">
                     <span class="legend-dot alt"></span>
-                    <span>冒险队伍波动</span>
+                    <span>Party fluctuations</span>
                   </div>
                 </div>
-                <div>最近约 2 分钟的魔力形势</div>
+                <div>Approx. last 2 minutes of arcane state</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右：队伍信息 & 日志 -->
+        <!-- Right: party info & log -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
               <div class="panel-title">Party Ledger</div>
-              <div class="panel-tag">A ↔ B 双向传讯</div>
+              <div class="panel-tag">A ↔ B two-way link</div>
             </div>
 
             <div class="side-blocks">
               <div class="mini-block-row">
                 <div class="mini-block">
-                  <div class="mini-label">记录的讯息总数</div>
+                  <div class="mini-label">Total messages recorded</div>
                   <div class="mini-value alt" id="metric-count">0</div>
                 </div>
                 <div class="mini-block">
-                  <div class="mini-label">最新解析数值</div>
+                  <div class="mini-label">Last parsed value</div>
                   <div class="mini-value" id="metric-parsed-mini">—</div>
                 </div>
               </div>
 
               <div class="mini-block-row">
                 <div class="mini-block">
-                  <div class="mini-label">最近来自小队</div>
+                  <div class="mini-label">Last party</div>
                   <div class="mini-value" id="metric-last-team">—</div>
                 </div>
                 <div class="mini-block">
-                  <div class="mini-label">最近关键字</div>
+                  <div class="mini-label">Last keyword</div>
                   <div class="mini-value" id="metric-last-key">—</div>
                 </div>
               </div>
@@ -585,7 +585,7 @@
 
   <script>
     // ---------------------
-    // WebSocket 设置
+    // WebSocket settings
     // ---------------------
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const WS_URL = `${protocol}://${location.host}/ws`;
@@ -621,26 +621,25 @@
     }
 
     function appendLog(time, source, text) {
-  const div = document.createElement("div");
-  div.className = "log-entry";
-  div.innerHTML =
-    `<span class="time">[${time}]</span> ` +
-    `<span class="source">${source}</span> ` +
-    `<span class="text">→ ${text}</span>`;
-  logEl.appendChild(div);
+      const div = document.createElement("div");
+      div.className = "log-entry";
+      div.innerHTML =
+        `<span class="time">[${time}]</span> ` +
+        `<span class="source">${source}</span> ` +
+        `<span class="text">→ ${text}</span>`;
+      logEl.appendChild(div);
 
-  // ⭐ 限制最大日志条数为 50，超过就删最旧的一条
-  const MAX_LOG_LINES = 50;
-  while (logEl.children.length > MAX_LOG_LINES) {
-    logEl.removeChild(logEl.firstChild);
-  }
+      // Limit the max log lines to 50; remove the oldest when exceeded
+      const MAX_LOG_LINES = 50;
+      while (logEl.children.length > MAX_LOG_LINES) {
+        logEl.removeChild(logEl.firstChild);
+      }
 
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
+      logEl.scrollTop = logEl.scrollHeight;
+    }
 
     // ---------------------
-    // Chart.js 配置
+    // Chart.js config
     // ---------------------
     const ctx = document.getElementById("chart").getContext("2d");
 
@@ -714,7 +713,7 @@
     }
 
     // ---------------------
-    // 数据解析：支持 "A:123" / "B:45" / "A:ON" 之类
+    // Parse data: supports "A:123" / "B:45" / "A:ON" etc.
     // ---------------------
     function parseNumeric(text) {
       const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
@@ -724,9 +723,9 @@
 
     function guessTeam(text) {
       const m = text.match(/^([A-Za-z0-9]+):/);
-      if (!m) return "未知小队";
-      if (m[1] === "A") return "小队 A";
-      if (m[1] === "B") return "小队 B";
+      if (!m) return "Unknown party";
+      if (m[1] === "A") return "Party A";
+      if (m[1] === "B") return "Party B";
       return m[1];
     }
 
@@ -737,15 +736,15 @@
     }
 
     // ---------------------
-    // WebSocket 连接逻辑
+    // WebSocket connection logic
     // ---------------------
     function connectWS() {
-      setStatus(false, "Linking Ritual", "正在召唤云端传讯阵法…");
+      setStatus(false, "Linking Ritual", "Summoning the cloud relay circle…");
 
       const ws = new WebSocket(WS_URL);
 
       ws.addEventListener("open", () => {
-        setStatus(true, "Link Established", "传讯阵法已就绪，聆听巨龙与小队的脉动。");
+        setStatus(true, "Link Established", "The relay circle is stable. Listening to dragon and party pulses.");
       });
 
       ws.addEventListener("message", (event) => {
@@ -786,12 +785,12 @@
       });
 
       ws.addEventListener("close", () => {
-        setStatus(false, "Link Lost", "阵法破碎，将在数秒后重新描绘魔法阵…");
+        setStatus(false, "Link Lost", "The circle has broken. Re-drawing runes in a few seconds…");
         setTimeout(connectWS, 3000);
       });
 
       ws.addEventListener("error", () => {
-        setStatus(false, "Ritual Error", "魔力紊乱，请稍后再试。");
+        setStatus(false, "Ritual Error", "Arcane disturbance detected. Please try again later.");
       });
     }
 
