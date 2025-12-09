@@ -412,7 +412,7 @@
         </div>
         <div class="chip">
           <span class="chip-label">Console</span>
-          <span class="chip-value">Keep last 15 lines</span>
+          <span class="chip-value">Keep last 15 entries</span>
         </div>
       </div>
     </header>
@@ -490,7 +490,10 @@
 
   <script>
     // ================== Config ==================
-    const WEBSOCKET_URL = "wss://YOUR_SERVER_URL_HERE"; // TODO: set your WebSocket URL
+    const WEBSOCKET_URL =
+      (location.protocol === "https:" ? "wss://" : "ws://") +
+      window.location.host +
+      "/ws";
 
     const MAX_POINTS = 50;       // max history per chart line
     const MAX_LOG_LINES = 15;    // max console lines
@@ -748,8 +751,9 @@
     addLogLine("SYS", "Page loaded, trying to connect WebSocket...");
     connectWs();
 
-    // You can send messages back to Arduino:
-    // ws.send(JSON.stringify({ to: "A", cmd: "vibrate", channel: 3 }));
+    // You can send messages back to Arduino in Python, e.g.:
+    // ws.send("A:24,24,24,24,24,24,24,24");
+    // or ws.send(JSON.stringify({ board: "A", values: [24,24,24,24,24,24,24,24] }));
   </script>
 </body>
 </html>
