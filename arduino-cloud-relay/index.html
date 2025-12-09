@@ -56,6 +56,7 @@
       position: relative;
       overflow: hidden;
 
+      /* 🔒 整个卷轴在 16:10 屏里不会被拉太长 */
       max-height: 90vh;
       overflow-y: auto;
     }
@@ -346,6 +347,7 @@
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
     }
 
+    /* 两张图上下排 + 固定高度 */
     .chart-stack {
       display: flex;
       flex-direction: column;
@@ -353,8 +355,8 @@
     }
 
     .chart-section {
-      height: 130px;
-      flex: 0 0 130px;
+      height: 130px;      /* 固定高度 */
+      flex: 0 0 130px;    /* 不允许拉伸/缩放，防止撑高页面 */
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -370,7 +372,7 @@
     #chartA,
     #chartB {
       width: 100%;
-      height: 100%;
+      height: 100%;       /* 只占用 chart-section */
     }
 
     .legend-row {
@@ -429,7 +431,7 @@
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.74rem;
-      height: 160px;
+      height: 160px;          /* 固定高度，内部滚动 */
       overflow: auto;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
     }
@@ -501,7 +503,7 @@
       </div>
 
       <div class="map-grid">
-        <!-- Left: two charts -->
+        <!-- 左：两个图表 -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
@@ -511,7 +513,7 @@
 
             <div class="block-row">
               <div class="hero-metric">
-                <div class="hero-label">CURRENT MYSTIC VALUE (avg of 8 channels)</div>
+                <div class="hero-label">CURRENT MYSTIC VALUE</div>
                 <div class="hero-main">
                   <span id="main-value">--</span>
                   <span class="unit">sigils</span>
@@ -540,11 +542,11 @@
             <div class="map-frame">
               <div class="chart-stack">
                 <div class="chart-section">
-                  <div class="chart-title">Party A channels</div>
+                  <div class="chart-title">Party A channel</div>
                   <canvas id="chartA"></canvas>
                 </div>
                 <div class="chart-section">
-                  <div class="chart-title">Party B channels</div>
+                  <div class="chart-title">Party B channel</div>
                   <canvas id="chartB"></canvas>
                 </div>
               </div>
@@ -557,7 +559,7 @@
           </div>
         </div>
 
-        <!-- Right: metrics + A/B logs -->
+        <!-- 右：指标 + A/B 日志 -->
         <div class="panel">
           <div class="panel-inner">
             <div class="panel-heading">
@@ -572,7 +574,7 @@
                   <div class="mini-value alt" id="metric-count">0</div>
                 </div>
                 <div class="mini-block">
-                  <div class="mini-label">Last avg value</div>
+                  <div class="mini-label">Last parsed value</div>
                   <div class="mini-value" id="metric-parsed-mini">—</div>
                 </div>
               </div>
@@ -646,22 +648,7 @@
 
     let msgCountTotal = 0;
     const msgCountByRole = { A: 0, B: 0 };
-    const lastAvgByRole = { A: null, B: null };
-
-    // 8 fixed colors for 8 channels
-    const CHANNEL_COLORS = [
-      "#e63946", // ch1
-      "#457b9d", // ch2
-      "#2a9d8f", // ch3
-      "#f4a261", // ch4
-      "#1d3557", // ch5
-      "#a8dadc", // ch6
-      "#ffbe0b", // ch7
-      "#8338ec"  // ch8
-    ];
-
-    const MAX_POINTS = 120;   // chart history per channel
-    const MAX_LOG_LINES = 15; // per-party log max lines
+    const lastNumericByRole = { A: null, B: null };
 
     function setStatus(online, mainText, subText) {
       if (online) {
@@ -686,47 +673,53 @@
         `<span class="text">→ ${text}</span>`;
       target.appendChild(div);
 
-      // keep only last MAX_LOG_LINES per party
+      const MAX_LOG_LINES = 50;
       while (target.children.length > MAX_LOG_LINES) {
         target.removeChild(target.firstChild);
       }
       target.scrollTop = target.scrollHeight;
     }
 
-    // ----- Chart.js: two charts (A / B), 8 lines each -----
+    // ----- Chart.js: 两张图（A / B） -----
     const ctxA = document.getElementById("chartA").getContext("2d");
     const ctxB = document.getElementById("chartB").getContext("2d");
 
     const chartDataA = {
       labels: [],
-      datasets: CHANNEL_COLORS.map((c, i) => ({
-        label: `A ch${i + 1}`,
-        data: [],
-        tension: 0.25,
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        borderColor: c
-      }))
+      datasets: [
+        {
+          label: "Party A",
+          data: [],
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          borderColor: "#b5523b",
+          backgroundColor: "rgba(181, 82, 59, 0.24)"
+        }
+      ]
     };
 
     const chartDataB = {
       labels: [],
-      datasets: CHANNEL_COLORS.map((c, i) => ({
-        label: `B ch${i + 1}`,
-        data: [],
-        tension: 0.25,
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        borderColor: c
-      }))
+      datasets: [
+        {
+          label: "Party B",
+          data: [],
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          borderColor: "#4f7c6b",
+          backgroundColor: "rgba(79, 124, 107, 0.24)"
+        }
+      ]
     };
 
     const baseChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 0 },
+      animation: { duration: 180 },
       scales: {
         x: { display: false },
         y: {
@@ -760,13 +753,11 @@
       return v;
     }
 
-    function pushPartySeries(roleKey, valuesArray) {
-      // 只用前 8 个通道
-      const numeric = valuesArray
-        .slice(0, 8)
-        .map((v) => Number(v))
-        .map((v) => (isNaN(v) ? null : clampValue(v)));
+    function pushChartValue(roleKey, v) {
+      if (v === null || isNaN(v)) return;
+      v = clampValue(v);
 
+      const MAX_POINTS = 120;
       const nowLabel = new Date().toLocaleTimeString("en-GB", {
         hour12: false,
         hour: "2-digit",
@@ -774,35 +765,26 @@
         second: "2-digit"
       });
 
-      let chartData = null;
-      let chart = null;
       if (roleKey === "A") {
-        chartData = chartDataA;
-        chart = chartA;
-      } else if (roleKey === "B") {
-        chartData = chartDataB;
-        chart = chartB;
-      } else {
-        return;
-      }
-
-      chartData.labels.push(nowLabel);
-      if (chartData.labels.length > MAX_POINTS) {
-        chartData.labels.shift();
-      }
-
-      chartData.datasets.forEach((ds, idx) => {
-        const v = numeric[idx] ?? null;
-        ds.data.push(v);
-        if (ds.data.length > MAX_POINTS) {
-          ds.data.shift();
+        chartDataA.labels.push(nowLabel);
+        chartDataA.datasets[0].data.push(v);
+        if (chartDataA.labels.length > MAX_POINTS) {
+          chartDataA.labels.shift();
+          chartDataA.datasets[0].data.shift();
         }
-      });
-
-      chart.update("none");
+        chartA.update("none");
+      } else if (roleKey === "B") {
+        chartDataB.labels.push(nowLabel);
+        chartDataB.datasets[0].data.push(v);
+        if (chartDataB.labels.length > MAX_POINTS) {
+          chartDataB.labels.shift();
+          chartDataB.datasets[0].data.shift();
+        }
+        chartB.update("none");
+      }
     }
 
-    // fallback: parse last numeric from a string
+    // ----- 辅助函数 -----
     function parseNumeric(text) {
       const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
       if (!match) return null;
@@ -821,67 +803,6 @@
       return parts.slice(1).join(":").trim().slice(0, 12) || "—";
     }
 
-    function parseMessage(raw) {
-      let roleKey = "Unknown";
-      let values = null;
-      let textForLog = raw;
-
-      if (!raw || typeof raw !== "string") {
-        return { roleKey, values, textForLog };
-      }
-
-      raw = raw.trim();
-      if (!raw) {
-        return { roleKey, values, textForLog };
-      }
-
-      // 1) try JSON: {"board":"A","values":[...]} or {"role":"A", ...}
-      if (raw.startsWith("{") && raw.endsWith("}")) {
-        try {
-          const obj = JSON.parse(raw);
-          if (obj && typeof obj === "object") {
-            if (Array.isArray(obj.values)) {
-              values = obj.values;
-              textForLog = obj.values.join(", ");
-            } else if (typeof obj.data === "string") {
-              textForLog = obj.data;
-            }
-            if (obj.role) roleKey = String(obj.role);
-            else if (obj.board) roleKey = String(obj.board);
-            else if (obj.id) roleKey = String(obj.id);
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      // 2) if still no values, try "A:24,24,24..." text format
-      if (!values) {
-        const idx = raw.indexOf(":");
-        if (idx > 0) {
-          const tag = raw.slice(0, idx).trim();
-          const payload = raw.slice(idx + 1).trim();
-          const arr = payload.split(/[,\s]+/).map((v) => Number(v));
-          if (arr.length >= 1 && !arr.every((v) => isNaN(v))) {
-            values = arr;
-            textForLog = payload;
-            roleKey = tag;
-          }
-        }
-      }
-
-      // normalize role
-      if (roleKey === "UNO_R4_A" || roleKey === "a" || roleKey === "A") {
-        roleKey = "A";
-      } else if (roleKey === "UNO_R4_B" || roleKey === "b" || roleKey === "B") {
-        roleKey = "B";
-      } else if (roleKey !== "A" && roleKey !== "B") {
-        roleKey = "Unknown";
-      }
-
-      return { roleKey, values, textForLog };
-    }
-
     // ----- WebSocket -----
     function connectWS() {
       setStatus(false, "Linking Ritual", "Summoning the cloud relay circle…");
@@ -893,13 +814,29 @@
       });
 
       ws.addEventListener("message", (event) => {
-        const raw = String(event.data);
-        const { roleKey, values, textForLog } = parseMessage(raw);
+        const raw = event.data;
+        let role = "Unknown";
+        let text = raw;
+
+        // 优先尝试 JSON: { role: "A"/"B", data: "..." }
+        try {
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === "object" && "data" in obj) {
+            text = String(obj.data);
+            if (obj.role) role = String(obj.role);
+          }
+        } catch (e) {
+          // 不是 JSON，就当作纯文本
+        }
+
+        let roleKey = "Unknown";
+        if (role === "A" || role === "UNO_R4_A") roleKey = "A";
+        else if (role === "B" || role === "UNO_R4_B") roleKey = "B";
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString("en-GB", { hour12: false });
 
-        // counters
+        // 计数
         msgCountTotal += 1;
         metricCountTotalEl.textContent = msgCountTotal.toString();
 
@@ -912,61 +849,37 @@
           }
         }
 
-        // compute average of 8 channels for the big value
-        let avgVal = null;
-        if (values && Array.isArray(values)) {
-          const nums = values
-            .slice(0, 8)
-            .map((v) => Number(v))
-            .filter((v) => !isNaN(v));
-          if (nums.length > 0) {
-            const sum = nums.reduce((a, b) => a + b, 0);
-            avgVal = sum / nums.length;
-          }
-        } else {
-          const single = parseNumeric(String(raw));
-          if (single !== null) {
-            avgVal = single;
-          }
-        }
-
-        const teamLabel = mapRoleToTeamLabel(roleKey);
-        const key = guessKeyWord(String(raw));
+        const val = parseNumeric(text);
+        const teamLabel = mapRoleToTeamLabel(roleKey === "Unknown" ? role : roleKey);
+        const key = guessKeyWord(text);
 
         metricLastKeyEl.textContent = key;
         metricLastTeamEl.textContent = teamLabel;
         lastSourceEl.textContent = teamLabel;
         lastTimestampEl.textContent = timeStr;
 
-        if (avgVal !== null) {
-          const vClamped = clampValue(avgVal);
+        if (val !== null) {
+          const vClamped = clampValue(val);
           mainValueEl.textContent = vClamped.toFixed(0);
           metricParsedEl.textContent = `${vClamped.toFixed(2)} sigils`;
           metricParsedMiniEl.textContent = vClamped.toFixed(2);
 
-          const prevAvg = lastAvgByRole[roleKey] ?? null;
-          if (prevAvg !== null) {
-            const diff = vClamped - prevAvg;
+          const prev = lastNumericByRole[roleKey] ?? null;
+          if (prev !== null) {
+            const diff = vClamped - prev;
             const sign = diff >= 0 ? "+" : "";
             trendChipEl.style.display = "inline-block";
             trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)} (${roleKey || "?"})`;
           }
-          if (roleKey === "A" || roleKey === "B") {
-            lastAvgByRole[roleKey] = vClamped;
-          }
+          lastNumericByRole[roleKey] = vClamped;
 
-          if (roleKey === "A" || roleKey === "B") {
-            pushPartySeries(roleKey, values || [vClamped]);
-          }
+          pushChartValue(roleKey, vClamped);
         } else {
           metricParsedEl.textContent = "—";
           metricParsedMiniEl.textContent = "—";
         }
 
-        const logText = values && Array.isArray(values)
-          ? values.slice(0, 8).map((v) => Number(v).toFixed(1)).join(", ")
-          : String(textForLog);
-        appendLog(roleKey, timeStr, logText);
+        appendLog(roleKey, timeStr, text);
       });
 
       ws.addEventListener("close", () => {
