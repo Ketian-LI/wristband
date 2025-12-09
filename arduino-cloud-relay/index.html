@@ -5,27 +5,24 @@
   <title>DragonLink · Live Party Chronicle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Vintage medieval + map-like feel -->
   <style>
     :root {
-      /* Old parchment & ink */
       --parchment-bg: #f5e7c6;
       --parchment-deep: #e2cf9c;
       --ink-main: #3b2b26;
       --ink-muted: #7a5c4b;
       --ink-strong: #5c3d2b;
 
-      /* Color blocks: party / dragon / magic / sky */
       --block-party: #d79c5b;
       --block-dragon: #b5523b;
       --block-magic: #4f7c6b;
       --block-sky: #6f8fa7;
 
       --border-dark: #57402e;
-      --border-light: #e0d0aa;
+      --border-light: #e0cba0;
 
-      --card-radius: 18px;
-      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.22);
+      --shadow-soft: 0 16px 40px rgba(70, 40, 20, 0.45);
+      --radius-card: 18px;
     }
 
     * {
@@ -36,469 +33,620 @@
 
     body {
       min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", sans-serif;
-      color: var(--ink-main);
       background:
-        radial-gradient(circle at 0 0, rgba(0,0,0,0.18), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(0,0,0,0.18), transparent 55%),
-        linear-gradient(135deg, var(--parchment-bg), var(--parchment-deep));
+        radial-gradient(circle at top, #f4e6c2 0, #e1cf9d 40%, #c7a774 80%),
+        repeating-linear-gradient(135deg, rgba(0,0,0,0.03) 0, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 4px);
+      color: var(--ink-main);
+      font-family: "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 16px;
     }
 
-    .shell {
-      max-width: 1100px;   /* good for 16:10 screen */
-      margin: 0 auto;
+    .scroll-shell {
+      width: 100%;
+      max-width: 1120px;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.78), rgba(244,225,181,0.95)),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.15) 0, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 3px);
+      border-radius: 22px;
+      border: 2px solid var(--border-dark);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
-    /* Top hero */
-    .hero {
+    .scroll-shell::before,
+    .scroll-shell::after {
+      content: "";
+      position: absolute;
+      top: -40px;
+      bottom: -40px;
+      width: 32px;
+      background:
+        radial-gradient(circle at center, #d9b177 0, #8d5b34 65%, #3d2316 100%);
+      box-shadow: inset 0 0 0 3px rgba(237,213,168,0.9);
+    }
+
+    .scroll-shell::before {
+      left: -18px;
+      border-radius: 999px;
+    }
+
+    .scroll-shell::after {
+      right: -18px;
+      border-radius: 999px;
+    }
+
+    .scroll-inner {
       position: relative;
-      margin-bottom: 16px;
-      padding: 18px 18px 16px;
-      border-radius: 26px;
+      padding: 20px 24px 18px;
+      border-left: 1px dashed rgba(87, 64, 46, 0.4);
+      border-right: 1px dashed rgba(87, 64, 46, 0.4);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .title-block h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--ink-strong);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-emblem {
+      font-size: 1.2rem;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: var(--block-party);
+      color: #24160e;
+      border: 1px solid #6e4623;
+      box-shadow: 0 3px 0 #6e4623;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+      max-width: 480px;
+      line-height: 1.4;
+    }
+
+    .status-panel {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
       border: 2px solid var(--border-dark);
       background:
-        linear-gradient(145deg, rgba(255,255,255,0.85), rgba(230,210,170,0.96));
-      box-shadow: var(--shadow-soft);
+        linear-gradient(145deg, #f4e3bf, #e1c99a);
+      box-shadow: 0 6px 0 rgba(87, 64, 46, 0.9);
+      min-width: 230px;
+    }
+
+    .status-seal {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #3d2316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      background: #b83f33;
+      color: #fef3c7;
+      box-shadow: inset 0 0 0 2px #fcd34d, 0 0 0 3px rgba(0,0,0,0.18);
+      position: relative;
+    }
+
+    .status-seal::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.25);
+    }
+
+    .status-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-main {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-strong);
+    }
+
+    .status-sub {
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+    }
+
+    .status-seal.online {
+      background: #3f7c45;
+      box-shadow: inset 0 0 0 2px #bbf7d0, 0 0 0 3px rgba(0,0,0,0.18);
+    }
+
+    .status-seal.online span {
+      transform: rotate(-10deg);
+    }
+
+    .map-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.05fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 860px) {
+      .map-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .scroll-inner {
+        padding: 16px 12px;
+      }
+    }
+
+    .panel {
+      border-radius: var(--radius-card);
+      border: 2px solid var(--border-dark);
+      background:
+        linear-gradient(145deg, var(--parchment-bg), #f2dfb2);
+      box-shadow: 0 10px 0 rgba(87, 64, 46, 0.9);
+      position: relative;
       overflow: hidden;
     }
-    .hero::before {
+
+    .panel::before {
       content: "";
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(0,0,0,0.06) 1px, transparent 1px);
-      background-size: 18px 18px;
-      mix-blend-mode: soft-light;
-      opacity: 0.4;
+        radial-gradient(circle at top left, rgba(180, 120, 70, 0.25), transparent 55%),
+        url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 80 Q80 10 155 80 T305 80' fill='none' stroke='%23d6b47c' stroke-width='1.4' stroke-dasharray='5 4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: cover, 260px 120px;
+      background-position: center, bottom right;
+      opacity: 0.25;
       pointer-events: none;
     }
-    .hero-main {
+
+    .panel-inner {
       position: relative;
-      display: flex;
-      align-items: center;
-      gap: 14px;
       z-index: 1;
+      padding: 12px 14px 12px;
     }
-    .hero-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      border: 2px solid var(--border-dark);
-      background: radial-gradient(circle at 30% 30%, #fff, #f1d28a);
+
+    .panel-heading {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--ink-strong);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-      flex-shrink: 0;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      gap: 8px;
     }
-    .hero-title-block {
-      flex: 1;
-    }
-    .hero-title {
-      font-size: 22px;
-      letter-spacing: 0.08em;
+
+    .panel-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--ink-strong);
     }
-    .hero-sub {
-      font-size: 13px;
-      color: var(--ink-muted);
-      margin-top: 4px;
-    }
-    .hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      position: relative;
-      z-index: 1;
-    }
-    .chip {
-      font-size: 11px;
-      padding: 3px 8px;
+
+    .panel-tag {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      padding: 2px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.85);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .chip-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--block-magic);
-    }
-    .chip-label {
-      color: var(--ink-muted);
-    }
-    .chip-value {
-      font-weight: 600;
-      color: var(--ink-strong);
+      border: 1px solid var(--border-dark);
+      background: #fef3c7;
+      color: #b45309;
+      box-shadow: 0 2px 0 #b45309;
+      white-space: nowrap;
     }
 
-    .status-pill {
-      font-size: 11px;
-      padding: 4px 10px;
+    .block-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .hero-metric {
+      background: var(--block-party);
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 2px solid #6b3b1d;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+
+    .hero-label {
+      font-size: 0.74rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3b1f0f;
+      margin-bottom: 4px;
+    }
+
+    .hero-main {
+      font-size: 2.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      color: #1b0f07;
+    }
+
+    .hero-main span.unit {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 3px;
+      color: #3b1f0f;
+    }
+
+    .hero-side {
+      background: var(--block-magic);
+      border-radius: 14px;
+      padding: 8px 10px;
+      border: 2px solid #23453b;
+      color: #ecfdf5;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hero-side strong {
+      font-size: 0.88rem;
+    }
+
+    .hero-side span {
+      color: #bae6fd;
+    }
+
+    .trend-label {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      padding: 2px 8px;
       border-radius: 999px;
       border: 1px solid rgba(0,0,0,0.2);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,0.85);
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #c0392b;
-    }
-    .status-dot.online {
-      background: #2ecc71;
-    }
-    .status-text {
-      font-weight: 600;
+      background: rgba(255,255,255,0.58);
+      color: #1b4332;
     }
 
-    /* Layout: two board cards + console */
-    .section-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
+    .map-frame {
+      border-radius: 14px;
+      border: 2px solid #324152;
+      background: #f9f5e7;
+      padding: 8px 8px 6px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
     }
 
-    .board-card {
-      position: relative;
-      border-radius: var(--card-radius);
-      padding: 14px 14px 12px;
-      border: 1.5px solid var(--border-dark);
-      background: rgba(255, 252, 240, 0.95);
-      box-shadow: var(--shadow-soft);
-      overflow: hidden;
-    }
-    .board-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        135deg,
-        rgba(255,255,255,0.35),
-        rgba(0,0,0,0.04)
-      );
-      opacity: 0.7;
-      pointer-events: none;
-    }
-
-    .board-header {
-      position: relative;
-      z-index: 1;
+    .chart-stack {
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chart-section {
+      height: 130px;
+      flex: 0 0 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .chart-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-muted);
+    }
+
+    #chartA,
+    #chartB {
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend-row {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+    }
+
+    .side-blocks {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
       margin-bottom: 10px;
     }
 
-    .tag-pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.25);
-      background: rgba(255,255,255,0.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--ink-strong);
-    }
-    .tag-color {
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .tag-party {
-      background: var(--block-party);
-    }
-    .tag-dragon {
-      background: var(--block-dragon);
-    }
-
-    .board-title-block {
-      flex: 1;
-    }
-    .board-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink-strong);
-    }
-    .board-sub {
-      font-size: 11px;
-      color: var(--ink-muted);
-      margin-top: 2px;
-    }
-
-    .board-metrics {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .metric {
-      font-size: 11px;
-      padding: 3px 7px;
-      border-radius: 6px;
-      border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.9);
-    }
-    .metric strong {
-      font-weight: 600;
-      color: var(--ink-strong);
-      margin-right: 4px;
-    }
-
-    /* Chart container: fixed height */
-    .chart-wrap {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      height: 260px;
-      margin-top: 4px;
-      padding: 6px;
-      border-radius: 12px;
-      border: 1px solid var(--border-light);
-      background:
-        linear-gradient(135deg, rgba(255,255,255,0.88), rgba(240,222,190,0.96));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
-    }
-
-    .chart-wrap canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* Console */
-    .console-card {
-      position: relative;
-      margin-top: 6px;
-      border-radius: var(--card-radius);
-      padding: 12px 14px 12px;
-      border: 1.5px solid var(--border-dark);
-      background: rgba(255, 252, 240, 0.98);
-      box-shadow: var(--shadow-soft);
-      overflow: hidden;
-    }
-    .console-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(0,0,0,0.06) 1px, transparent 1px);
-      background-size: 16px 16px;
-      mix-blend-mode: soft-light;
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .console-header {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
+    .mini-block-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      margin-bottom: 8px;
     }
-    .console-title {
-      font-size: 14px;
+
+    .mini-block {
+      border-radius: 12px;
+      border: 2px solid var(--border-dark);
+      padding: 6px 8px 7px;
+      background: #f8ecd0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+      font-size: 0.78rem;
+    }
+
+    .mini-label {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      margin-bottom: 2px;
+    }
+
+    .mini-value {
+      font-size: 0.9rem;
       font-weight: 600;
       color: var(--ink-strong);
     }
 
-    .console-log {
-      position: relative;
-      z-index: 1;
-      max-height: 200px;
-      overflow-y: auto;
-      padding-right: 4px;
-      border-radius: 10px;
-      border: 1px solid rgba(0,0,0,0.12);
-      background: rgba(255,255,255,0.9);
-    }
-    .console-log ul {
-      list-style: none;
-      padding: 6px 8px;
-    }
-    .log-line {
-      font-size: 11px;
-      line-height: 1.4;
-      padding: 2px 0;
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      border-bottom: 1px dashed rgba(0,0,0,0.06);
-    }
-    .log-line:last-child {
-      border-bottom: none;
-    }
-    .log-time {
-      flex-shrink: 0;
-      color: var(--ink-muted);
-      font-family: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
-    }
-    .log-tag {
-      flex-shrink: 0;
-      font-size: 10px;
-      padding: 1px 5px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.2);
-      background: rgba(250,240,215,0.9);
-    }
-    .log-body {
-      flex: 1;
-      word-break: break-all;
+    .mini-value.alt {
+      color: var(--block-dragon);
     }
 
-    @media (max-width: 720px) {
-      .hero-main {
-        flex-direction: row;
-        align-items: flex-start;
-      }
-      .hero-title {
-        font-size: 18px;
-      }
+    .log-book {
+      border-radius: 12px;
+      border: 2px solid var(--border-dark);
+      background:
+        linear-gradient(160deg, #f6e5bf, #f1d8a2);
+      padding: 6px 8px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.74rem;
+      height: 160px;
+      overflow: auto;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    }
+
+    .log-entry {
+      margin-bottom: 2px;
+      color: var(--ink-main);
+    }
+
+    .log-entry span.time {
+      color: var(--ink-muted);
+    }
+
+    .log-entry span.source {
+      color: var(--block-dragon);
+      font-weight: 600;
+    }
+
+    .log-entry span.text {
+      color: var(--ink-main);
+    }
+
+    .party-logs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .party-column {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .party-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--ink-muted);
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="shell">
-    <!-- Hero -->
-    <header class="hero">
-      <div class="hero-main">
-        <div class="hero-badge">DL</div>
-        <div class="hero-title-block">
-          <div class="hero-title">DragonLink · Live Party Chronicle</div>
-          <div class="hero-sub">
-            Two distant wristbands share touch and vibration on the same magic map.
-          </div>
+  <div class="scroll-shell">
+    <div class="scroll-inner">
+      <div class="header-row">
+        <div class="title-block">
+          <h1>
+            <span class="title-emblem">⚔️</span>
+            DRAGONLINK SCROLL
+          </h1>
+          <p class="subtitle">
+            Two distant adventuring parties share their status through a cloud-borne magic scroll.
+            You are now watching their heartbeat, strength, and omens as they face the dragon.
+          </p>
         </div>
-        <div id="ws-status-pill" class="status-pill">
-          <span id="ws-status-dot" class="status-dot"></span>
-          <span id="ws-status-text" class="status-text">Connecting...</span>
+
+        <div class="status-panel">
+          <div id="status-seal" class="status-seal">
+            <span>⏳</span>
+          </div>
+          <div class="status-texts">
+            <div id="status-main" class="status-main">Linking Ritual</div>
+            <div id="status-sub" class="status-sub">Summoning the cloud relay circle…</div>
+          </div>
         </div>
       </div>
 
-      <div class="hero-meta">
-        <div class="chip">
-          <span class="chip-dot"></span>
-          <span class="chip-label">Channels</span>
-          <span class="chip-value">A / B · 8 each</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">Y-axis range</span>
-          <span class="chip-value">-50 ~ 50</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">History</span>
-          <span class="chip-value">50 frames per chart</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">Console</span>
-          <span class="chip-value">Keep last 15 entries</span>
-        </div>
-      </div>
-    </header>
+      <div class="map-grid">
+        <!-- Left: two charts -->
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="panel-heading">
+              <div class="panel-title">Dragon's Breath Gauge</div>
+              <div class="panel-tag">Live · Enchanted</div>
+            </div>
 
-    <!-- Two teams -->
-    <main class="section-grid">
-      <!-- Team A / Arduino A -->
-      <section class="board-card">
-        <header class="board-header">
-          <div class="tag-pill">
-            <span class="tag-color tag-party"></span>
-            Team A · Party
-          </div>
-          <div class="board-title-block">
-            <div class="board-title">Arduino A — Touch to Vibration Path</div>
-            <div class="board-sub">
-              8 touch electrodes → BLE → web → 8 colored traces.
+            <div class="block-row">
+              <div class="hero-metric">
+                <div class="hero-label">CURRENT MYSTIC VALUE (avg of 8 channels)</div>
+                <div class="hero-main">
+                  <span id="main-value">--</span>
+                  <span class="unit">sigils</span>
+                </div>
+                <div id="trend-chip" class="trend-label" style="display:none;">
+                  Δ +0
+                </div>
+              </div>
+
+              <div class="hero-side">
+                <div>
+                  <strong>Latest change</strong>
+                  <span id="metric-parsed">—</span>
+                </div>
+                <div>
+                  Source party:
+                  <span id="last-source">—</span>
+                </div>
+                <div>
+                  Last update:
+                  <span id="last-timestamp">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="map-frame">
+              <div class="chart-stack">
+                <div class="chart-section">
+                  <div class="chart-title">Party A channels</div>
+                  <canvas id="chartA"></canvas>
+                </div>
+                <div class="chart-section">
+                  <div class="chart-title">Party B channels</div>
+                  <canvas id="chartB"></canvas>
+                </div>
+              </div>
+
+              <div class="legend-row">
+                <div>Y-range fixed: -50 ~ 50</div>
+                <div>Approx. last 2 minutes</div>
+              </div>
             </div>
           </div>
-        </header>
-
-        <div class="board-metrics">
-          <div class="metric">
-            <strong>Latest values</strong>
-            <span id="a-last-values">Waiting for data...</span>
-          </div>
         </div>
 
-        <div class="chart-wrap">
-          <canvas id="chartA"></canvas>
-        </div>
-      </section>
+        <!-- Right: metrics + A/B logs -->
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="panel-heading">
+              <div class="panel-title">Party Ledger</div>
+              <div class="panel-tag">A ↔ B two-way link</div>
+            </div>
 
-      <!-- Team B / Arduino B -->
-      <section class="board-card">
-        <header class="board-header">
-          <div class="tag-pill">
-            <span class="tag-color tag-dragon"></span>
-            Team B · Dragon
-          </div>
-          <div class="board-title-block">
-            <div class="board-title">Arduino B — Remote Echo Response</div>
-            <div class="board-sub">
-              Feedback from the other wrist becomes 8 spectral lines here.
+            <div class="side-blocks">
+              <div class="mini-block-row">
+                <div class="mini-block">
+                  <div class="mini-label">Total messages recorded</div>
+                  <div class="mini-value alt" id="metric-count">0</div>
+                </div>
+                <div class="mini-block">
+                  <div class="mini-label">Last avg value</div>
+                  <div class="mini-value" id="metric-parsed-mini">—</div>
+                </div>
+              </div>
+
+              <div class="mini-block-row">
+                <div class="mini-block">
+                  <div class="mini-label">Messages from A</div>
+                  <div class="mini-value" id="metric-count-A">0</div>
+                </div>
+                <div class="mini-block">
+                  <div class="mini-label">Messages from B</div>
+                  <div class="mini-value" id="metric-count-B">0</div>
+                </div>
+              </div>
+
+              <div class="mini-block-row">
+                <div class="mini-block">
+                  <div class="mini-label">Last keyword</div>
+                  <div class="mini-value" id="metric-last-key">—</div>
+                </div>
+                <div class="mini-block">
+                  <div class="mini-label">Last party heard from</div>
+                  <div class="mini-value" id="metric-last-team">—</div>
+                </div>
+              </div>
+
+              <div class="party-logs">
+                <div class="party-column">
+                  <div class="party-title">Party A log</div>
+                  <div class="log-book" id="log-A"></div>
+                </div>
+                <div class="party-column">
+                  <div class="party-title">Party B log</div>
+                  <div class="log-book" id="log-B"></div>
+                </div>
+              </div>
+
             </div>
           </div>
-        </header>
-
-        <div class="board-metrics">
-          <div class="metric">
-            <strong>Latest values</strong>
-            <span id="b-last-values">Waiting for data...</span>
-          </div>
         </div>
 
-        <div class="chart-wrap">
-          <canvas id="chartB"></canvas>
-        </div>
-      </section>
-    </main>
-
-    <!-- Console -->
-    <section class="console-card">
-      <header class="console-header">
-        <div class="console-title">Relay Console · Last 15 entries</div>
-      </header>
-      <div class="console-log" id="console-log">
-        <ul id="log-list"></ul>
       </div>
-    </section>
+
+    </div>
   </div>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <script>
-    // ================== Config ==================
-    const WEBSOCKET_URL =
-      (location.protocol === "https:" ? "wss://" : "ws://") +
-      window.location.host +
-      "/ws";
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const WS_URL = `${protocol}://${location.host}/ws`;
 
-    const MAX_POINTS = 50;       // max history per chart line
-    const MAX_LOG_LINES = 15;    // max console lines
-    const Y_MIN = -50;
-    const Y_MAX = 50;
+    const statusSeal = document.getElementById("status-seal");
+    const statusMain = document.getElementById("status-main");
+    const statusSub = document.getElementById("status-sub");
+
+    const mainValueEl = document.getElementById("main-value");
+    const trendChipEl = document.getElementById("trend-chip");
+    const metricParsedEl = document.getElementById("metric-parsed");
+    const metricParsedMiniEl = document.getElementById("metric-parsed-mini");
+
+    const metricCountTotalEl = document.getElementById("metric-count");
+    const metricCountAEl = document.getElementById("metric-count-A");
+    const metricCountBEl = document.getElementById("metric-count-B");
+
+    const lastSourceEl = document.getElementById("last-source");
+    const lastTimestampEl = document.getElementById("last-timestamp");
+    const metricLastKeyEl = document.getElementById("metric-last-key");
+    const metricLastTeamEl = document.getElementById("metric-last-team");
+
+    const logAEl = document.getElementById("log-A");
+    const logBEl = document.getElementById("log-B");
+
+    let msgCountTotal = 0;
+    const msgCountByRole = { A: 0, B: 0 };
+    const lastAvgByRole = { A: null, B: null };
 
     // 8 fixed colors for 8 channels
     const CHANNEL_COLORS = [
@@ -512,146 +660,138 @@
       "#8338ec"  // ch8
     ];
 
-    // DOM refs
-    const wsStatusDot  = document.getElementById("ws-status-dot");
-    const wsStatusText = document.getElementById("ws-status-text");
+    const MAX_POINTS = 120;   // chart history per channel
+    const MAX_LOG_LINES = 15; // per-party log max lines
 
-    const lastValuesA = document.getElementById("a-last-values");
-    const lastValuesB = document.getElementById("b-last-values");
-
-    const logList = document.getElementById("log-list");
-    const consoleLog = document.getElementById("console-log");
-
-    // ================== Helpers ==================
-    function setWsStatus(online) {
+    function setStatus(online, mainText, subText) {
       if (online) {
-        wsStatusDot.classList.add("online");
-        wsStatusText.textContent = "Connected";
+        statusSeal.classList.add("online");
+        statusSeal.querySelector("span").textContent = "✨";
       } else {
-        wsStatusDot.classList.remove("online");
-        wsStatusText.textContent = "Disconnected, retrying...";
+        statusSeal.classList.remove("online");
+        statusSeal.querySelector("span").textContent = "⏳";
       }
+      statusMain.textContent = mainText;
+      statusSub.textContent = subText || "";
     }
 
-    function getTimeStr() {
-      const d = new Date();
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mm = String(d.getMinutes()).padStart(2, "0");
-      const ss = String(d.getSeconds()).padStart(2, "0");
-      return `${hh}:${mm}:${ss}`;
-    }
+    function appendLog(roleKey, time, text) {
+      const target = roleKey === "B" ? logBEl : logAEl;
+      const div = document.createElement("div");
+      div.className = "log-entry";
+      const label = roleKey === "A" ? "A" : (roleKey === "B" ? "B" : "?");
+      div.innerHTML =
+        `<span class="time">[${time}]</span> ` +
+        `<span class="source">${label}</span> ` +
+        `<span class="text">→ ${text}</span>`;
+      target.appendChild(div);
 
-    // Append console line, keep at most MAX_LOG_LINES
-    function addLogLine(tag, message) {
-      const li = document.createElement("li");
-      li.className = "log-line";
-
-      const spanTime = document.createElement("span");
-      spanTime.className = "log-time";
-      spanTime.textContent = getTimeStr();
-
-      const spanTag = document.createElement("span");
-      spanTag.className = "log-tag";
-      spanTag.textContent = tag;
-
-      const spanBody = document.createElement("span");
-      spanBody.className = "log-body";
-      spanBody.textContent = message;
-
-      li.appendChild(spanTime);
-      li.appendChild(spanTag);
-      li.appendChild(spanBody);
-
-      logList.appendChild(li);
-
-      // limit count
-      while (logList.children.length > MAX_LOG_LINES) {
-        logList.removeChild(logList.firstChild);
+      // keep only last MAX_LOG_LINES per party
+      while (target.children.length > MAX_LOG_LINES) {
+        target.removeChild(target.firstChild);
       }
-
-      consoleLog.scrollTop = consoleLog.scrollHeight;
+      target.scrollTop = target.scrollHeight;
     }
 
-    // ================== Charts ==================
-    function createDatasets(prefixLabel) {
-      return Array.from({ length: 8 }, (_, i) => ({
-        label: `${prefixLabel} ch${i + 1}`,
-        data: [],
-        borderColor: CHANNEL_COLORS[i],
-        borderWidth: 2,
-        pointRadius: 0,
-        tension: 0.18,
-        fill: false
-      }));
-    }
-
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      scales: {
-        x: {
-          ticks: { display: false },
-          grid: { display: false }
-        },
-        y: {
-          min: Y_MIN,
-          max: Y_MAX,
-          ticks: {
-            stepSize: 10,
-            color: "#7a5c4b"
-          },
-          grid: {
-            color: "rgba(0,0,0,0.08)"
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            boxWidth: 12,
-            boxHeight: 12,
-            font: { size: 10 },
-            color: "#3b2b26"
-          }
-        }
-      }
-    };
-
+    // ----- Chart.js: two charts (A / B), 8 lines each -----
     const ctxA = document.getElementById("chartA").getContext("2d");
     const ctxB = document.getElementById("chartB").getContext("2d");
 
+    const chartDataA = {
+      labels: [],
+      datasets: CHANNEL_COLORS.map((c, i) => ({
+        label: `A ch${i + 1}`,
+        data: [],
+        tension: 0.25,
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        borderColor: c
+      }))
+    };
+
+    const chartDataB = {
+      labels: [],
+      datasets: CHANNEL_COLORS.map((c, i) => ({
+        label: `B ch${i + 1}`,
+        data: [],
+        tension: 0.25,
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        borderColor: c
+      }))
+    };
+
+    const baseChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 0 },
+      scales: {
+        x: { display: false },
+        y: {
+          min: -50,
+          max: 50,
+          grid: { color: "rgba(87,64,46,0.25)" },
+          ticks: {
+            color: "#5c3d2b",
+            font: { size: 10 }
+          }
+        }
+      },
+      plugins: { legend: { display: false } }
+    };
+
     const chartA = new Chart(ctxA, {
       type: "line",
-      data: {
-        labels: [],
-        datasets: createDatasets("A")
-      },
-      options: chartOptions
+      data: chartDataA,
+      options: baseChartOptions
     });
 
     const chartB = new Chart(ctxB, {
       type: "line",
-      data: {
-        labels: [],
-        datasets: createDatasets("B")
-      },
-      options: chartOptions
+      data: chartDataB,
+      options: baseChartOptions
     });
 
-    function pushValues(chart, valuesArray) {
-      if (!Array.isArray(valuesArray) || valuesArray.length < 8) return;
+    function clampValue(v) {
+      if (v > 50) return 50;
+      if (v < -50) return -50;
+      return v;
+    }
 
-      const labels = chart.data.labels;
-      labels.push("");
-      if (labels.length > MAX_POINTS) {
-        labels.shift();
+    function pushPartySeries(roleKey, valuesArray) {
+      const numeric = valuesArray
+        .map((v) => Number(v))
+        .map((v) => (isNaN(v) ? null : clampValue(v)));
+
+      const nowLabel = new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      let chartData = null;
+      let chart = null;
+      if (roleKey === "A") {
+        chartData = chartDataA;
+        chart = chartA;
+      } else if (roleKey === "B") {
+        chartData = chartDataB;
+        chart = chartB;
+      } else {
+        return;
       }
 
-      chart.data.datasets.forEach((ds, idx) => {
-        const v = Number(valuesArray[idx]);
-        ds.data.push(isNaN(v) ? null : v);
+      chartData.labels.push(nowLabel);
+      if (chartData.labels.length > MAX_POINTS) {
+        chartData.labels.shift();
+      }
+
+      chartData.datasets.forEach((ds, idx) => {
+        const v = numeric[idx] ?? null;
+        ds.data.push(v);
         if (ds.data.length > MAX_POINTS) {
           ds.data.shift();
         }
@@ -660,100 +800,169 @@
       chart.update("none");
     }
 
-    function updateLastValues(board, valuesArray) {
-      const text = valuesArray.map(v => Number(v).toFixed(1)).join(", ");
-      if (board === "A") {
-        lastValuesA.textContent = text;
-      } else if (board === "B") {
-        lastValuesB.textContent = text;
-      }
+    // legacy helper: last numeric in string
+    function parseNumeric(text) {
+      const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
+      if (!match) return null;
+      return parseFloat(match[1]);
     }
 
-    // ================== WebSocket ==================
-    let ws = null;
-    let reconnectTimer = null;
+    function mapRoleToTeamLabel(role) {
+      if (role === "A") return "Party A";
+      if (role === "B") return "Party B";
+      return role || "Unknown party";
+    }
 
-    function connectWs() {
-      try {
-        ws = new WebSocket(WEBSOCKET_URL);
-      } catch (e) {
-        console.error("WebSocket creation failed:", e);
-        setWsStatus(false);
-        return;
-      }
+    function guessKeyWord(text) {
+      const parts = text.split(":");
+      if (parts.length <= 1) return text.slice(0, 12) || "—";
+      return parts.slice(1).join(":").trim().slice(0, 12) || "—";
+    }
 
-      ws.onopen = () => {
-        setWsStatus(true);
-        addLogLine("SYS", "WebSocket connected");
-      };
+    // ----- WebSocket -----
+    function connectWS() {
+      setStatus(false, "Linking Ritual", "Summoning the cloud relay circle…");
 
-      ws.onclose = () => {
-        setWsStatus(false);
-        addLogLine("SYS", "WebSocket closed, will retry...");
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(connectWs, 3000);
-      };
+      const ws = new WebSocket(WS_URL);
 
-      ws.onerror = (err) => {
-        console.error("WebSocket error:", err);
-        addLogLine("ERR", "WebSocket error");
-      };
+      ws.addEventListener("open", () => {
+        setStatus(true, "Link Established", "The relay circle is stable. Listening to dragon and party pulses.");
+      });
 
-      ws.onmessage = (event) => {
-        const raw = typeof event.data === "string" ? event.data.trim() : "";
-        if (!raw) return;
-
-        // Supported formats:
-        // 1) JSON: {"board":"A","values":[24,24,24,24,24,24,24,24]}
-        // 2) Text: "A:24,24,24,24,24,24,24,24"
-        let board = null;
+      ws.addEventListener("message", (event) => {
+        const raw = event.data;
+        let roleKey = "Unknown";
         let values = null;
+        let textForLog = raw;
 
-        if (raw.startsWith("{")) {
-          try {
-            const obj = JSON.parse(raw);
-            board  = obj.board || obj.label || obj.id || null;
-            values = Array.isArray(obj.values) ? obj.values : null;
-          } catch (e) {
-            // fall through to text parsing
+        // Try JSON first
+        try {
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === "object") {
+            if (Array.isArray(obj.values)) {
+              values = obj.values;
+              textForLog = obj.values.join(", ");
+            } else if (typeof obj.data === "string") {
+              textForLog = obj.data;
+            }
+            if (obj.role) roleKey = String(obj.role);
+            else if (obj.board) roleKey = String(obj.board);
+            else if (obj.id) roleKey = String(obj.id);
           }
+        } catch (e) {
+          // Not JSON, will treat as plain text
         }
 
-        if (!board || !values) {
+        // If still no values, try text format like "A:24,24,24,..."
+        if (!values) {
           const idx = raw.indexOf(":");
           if (idx > 0) {
-            board = raw.slice(0, idx).trim();
+            const tag = raw.slice(0, idx).trim();
             const payload = raw.slice(idx + 1).trim();
-            values = payload.split(",").map(Number);
+            const arr = payload.split(",").map((v) => Number(v));
+            if (arr.length >= 1 && !arr.every((v) => isNaN(v))) {
+              values = arr;
+              textForLog = payload;
+              roleKey = tag;
+            }
           }
         }
 
-        if (!board || !values || !Array.isArray(values) || values.length < 8) {
-          addLogLine("RAW", raw);
-          return;
+        // Normalize role
+        if (roleKey === "UNO_R4_A" || roleKey === "a" || roleKey === "A") {
+          roleKey = "A";
+        } else if (roleKey === "UNO_R4_B" || roleKey === "b" || roleKey === "B") {
+          roleKey = "B";
+        } else if (roleKey !== "A" && roleKey !== "B") {
+          roleKey = "Unknown";
         }
 
-        if (board === "A" || board === "a") {
-          pushValues(chartA, values);
-          updateLastValues("A", values);
-          addLogLine("A → Web", values.join(", "));
-        } else if (board === "B" || board === "b") {
-          pushValues(chartB, values);
-          updateLastValues("B", values);
-          addLogLine("B → Web", values.join(", "));
-        } else {
-          addLogLine(board, values.join(", "));
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString("en-GB", { hour12: false });
+
+        // Increase counters
+        msgCountTotal += 1;
+        metricCountTotalEl.textContent = msgCountTotal.toString();
+
+        if (roleKey === "A" || roleKey === "B") {
+          msgCountByRole[roleKey] += 1;
+          if (roleKey === "A") {
+            metricCountAEl.textContent = msgCountByRole.A.toString();
+          } else {
+            metricCountBEl.textContent = msgCountByRole.B.toString();
+          }
         }
-      };
+
+        let avgVal = null;
+        if (values && Array.isArray(values)) {
+          const nums = values
+            .map((v) => Number(v))
+            .filter((v) => !isNaN(v));
+          if (nums.length > 0) {
+            const sum = nums.reduce((a, b) => a + b, 0);
+            avgVal = sum / nums.length;
+          }
+        } else {
+          // fallback to single numeric in text
+          const single = parseNumeric(String(raw));
+          if (single !== null) {
+            avgVal = single;
+            values = [single];
+          }
+        }
+
+        const teamLabel = mapRoleToTeamLabel(roleKey);
+        const key = guessKeyWord(String(raw));
+
+        metricLastKeyEl.textContent = key;
+        metricLastTeamEl.textContent = teamLabel;
+        lastSourceEl.textContent = teamLabel;
+        lastTimestampEl.textContent = timeStr;
+
+        if (avgVal !== null) {
+          const vClamped = clampValue(avgVal);
+          mainValueEl.textContent = vClamped.toFixed(0);
+          metricParsedEl.textContent = `${vClamped.toFixed(2)} sigils`;
+          metricParsedMiniEl.textContent = vClamped.toFixed(2);
+
+          const prevAvg = lastAvgByRole[roleKey] ?? null;
+          if (prevAvg !== null) {
+            const diff = vClamped - prevAvg;
+            const sign = diff >= 0 ? "+" : "";
+            trendChipEl.style.display = "inline-block";
+            trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)} (${roleKey || "?"})`;
+          }
+          if (roleKey === "A" || roleKey === "B") {
+            lastAvgByRole[roleKey] = vClamped;
+          }
+
+          // Push to charts if we know which party
+          if (roleKey === "A" || roleKey === "B") {
+            pushPartySeries(roleKey, values || [vClamped]);
+          }
+        } else {
+          metricParsedEl.textContent = "—";
+          metricParsedMiniEl.textContent = "—";
+        }
+
+        // Log text
+        const logText = values && Array.isArray(values)
+          ? values.map((v) => Number(v).toFixed(1)).join(", ")
+          : String(textForLog);
+        appendLog(roleKey, timeStr, logText);
+      });
+
+      ws.addEventListener("close", () => {
+        setStatus(false, "Link Lost", "The circle has broken. Re-drawing runes in a few seconds…");
+        setTimeout(connectWS, 3000);
+      });
+
+      ws.addEventListener("error", () => {
+        setStatus(false, "Ritual Error", "Arcane disturbance detected. Please try again later.");
+      });
     }
 
-    setWsStatus(false);
-    addLogLine("SYS", "Page loaded, trying to connect WebSocket...");
-    connectWs();
-
-    // You can send messages back to Arduino in Python, e.g.:
-    // ws.send("A:24,24,24,24,24,24,24,24");
-    // or ws.send(JSON.stringify({ board: "A", values: [24,24,24,24,24,24,24,24] }));
+    connectWS();
   </script>
 </body>
 </html>
