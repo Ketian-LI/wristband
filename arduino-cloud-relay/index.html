@@ -1,21 +1,21 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DragonLink · 冒险小队实况卷轴</title>
+  <title>DragonLink · Live Party Chronicle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 复古中世纪 + 地图质感 -->
+  <!-- Vintage medieval + map-like feel -->
   <style>
     :root {
-      /* 旧羊皮纸和墨水色 */
+      /* Old parchment & ink */
       --parchment-bg: #f5e7c6;
       --parchment-deep: #e2cf9c;
       --ink-main: #3b2b26;
       --ink-muted: #7a5c4b;
       --ink-strong: #5c3d2b;
 
-      /* 色块：冒险队伍 / 巨龙 / 魔法能量 / 天空 */
+      /* Color blocks: party / dragon / magic / sky */
       --block-party: #d79c5b;
       --block-dragon: #b5523b;
       --block-magic: #4f7c6b;
@@ -36,8 +36,8 @@
 
     body {
       min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC",
-        "Microsoft Yahei", sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
       color: var(--ink-main);
       background:
         radial-gradient(circle at 0 0, rgba(0,0,0,0.18), transparent 60%),
@@ -47,11 +47,11 @@
     }
 
     .shell {
-      max-width: 1100px;   /* 兼顾 16:10 屏幕 */
+      max-width: 1100px;   /* good for 16:10 screen */
       margin: 0 auto;
     }
 
-    /* 顶部标题 */
+    /* Top hero */
     .hero {
       position: relative;
       margin-bottom: 16px;
@@ -167,7 +167,7 @@
       font-weight: 600;
     }
 
-    /* 布局：上面两个队伍卡片 + 下面通信台 */
+    /* Layout: two board cards + console */
     .section-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -265,12 +265,12 @@
       margin-right: 4px;
     }
 
-    /* 图表容器：固定高度，防止页面被拉长 */
+    /* Chart container: fixed height */
     .chart-wrap {
       position: relative;
       z-index: 1;
       width: 100%;
-      height: 260px;      /* 你可以按需要调整高度 */
+      height: 260px;
       margin-top: 4px;
       padding: 6px;
       border-radius: 12px;
@@ -285,7 +285,7 @@
       height: 100% !important;
     }
 
-    /* 通信台 */
+    /* Console */
     .console-card {
       position: relative;
       margin-top: 6px;
@@ -367,7 +367,6 @@
       word-break: break-all;
     }
 
-    /* 小屏处理 */
     @media (max-width: 720px) {
       .hero-main {
         flex-direction: row;
@@ -381,64 +380,64 @@
 </head>
 <body>
   <div class="shell">
-    <!-- 顶部：标题+状态 -->
+    <!-- Hero -->
     <header class="hero">
       <div class="hero-main">
         <div class="hero-badge">DL</div>
         <div class="hero-title-block">
-          <div class="hero-title">DragonLink · 冒险小队实况卷轴</div>
+          <div class="hero-title">DragonLink · Live Party Chronicle</div>
           <div class="hero-sub">
-            两只远在异地的手环，在同一张“魔法地图”上留下震动与触摸的痕迹。
+            Two distant wristbands share touch and vibration on the same magic map.
           </div>
         </div>
         <div id="ws-status-pill" class="status-pill">
           <span id="ws-status-dot" class="status-dot"></span>
-          <span id="ws-status-text" class="status-text">连接中...</span>
+          <span id="ws-status-text" class="status-text">Connecting...</span>
         </div>
       </div>
 
       <div class="hero-meta">
         <div class="chip">
           <span class="chip-dot"></span>
-          <span class="chip-label">通道数</span>
-          <span class="chip-value">A / B 各 8 通道</span>
+          <span class="chip-label">Channels</span>
+          <span class="chip-value">A / B · 8 each</span>
         </div>
         <div class="chip">
-          <span class="chip-label">Y 轴范围</span>
+          <span class="chip-label">Y-axis range</span>
           <span class="chip-value">-50 ~ 50</span>
         </div>
         <div class="chip">
-          <span class="chip-label">历史长度</span>
-          <span class="chip-value">最近 50 组</span>
+          <span class="chip-label">History</span>
+          <span class="chip-value">50 frames per chart</span>
         </div>
         <div class="chip">
-          <span class="chip-label">通信记录</span>
-          <span class="chip-value">保留最近 15 条</span>
+          <span class="chip-label">Console</span>
+          <span class="chip-value">Keep last 15 lines</span>
         </div>
       </div>
     </header>
 
-    <!-- 中间：两个队伍图表 -->
+    <!-- Two teams -->
     <main class="section-grid">
-      <!-- 冒险小队 / Arduino A -->
+      <!-- Team A / Arduino A -->
       <section class="board-card">
         <header class="board-header">
           <div class="tag-pill">
             <span class="tag-color tag-party"></span>
-            队伍 A · 冒险小队
+            Team A · Party
           </div>
           <div class="board-title-block">
-            <div class="board-title">Arduino A — 触摸到震动的路径</div>
+            <div class="board-title">Arduino A — Touch to Vibration Path</div>
             <div class="board-sub">
-              8 个触摸电极 → BLE → 网页 → 8 条彩色轨迹。
+              8 touch electrodes → BLE → web → 8 colored traces.
             </div>
           </div>
         </header>
 
         <div class="board-metrics">
           <div class="metric">
-            <strong>当前通道值</strong>
-            <span id="a-last-values">等待数据...</span>
+            <strong>Latest values</strong>
+            <span id="a-last-values">Waiting for data...</span>
           </div>
         </div>
 
@@ -447,25 +446,25 @@
         </div>
       </section>
 
-      <!-- 巨龙之巢 / Arduino B -->
+      <!-- Team B / Arduino B -->
       <section class="board-card">
         <header class="board-header">
           <div class="tag-pill">
             <span class="tag-color tag-dragon"></span>
-            队伍 B · 巨龙之巢
+            Team B · Dragon
           </div>
           <div class="board-title-block">
-            <div class="board-title">Arduino B — 远方回应的震颤</div>
+            <div class="board-title">Arduino B — Remote Echo Response</div>
             <div class="board-sub">
-              来自另一只手腕的回声，在这里变成 8 条光谱。
+              Feedback from the other wrist becomes 8 spectral lines here.
             </div>
           </div>
         </header>
 
         <div class="board-metrics">
           <div class="metric">
-            <strong>当前通道值</strong>
-            <span id="b-last-values">等待数据...</span>
+            <strong>Latest values</strong>
+            <span id="b-last-values">Waiting for data...</span>
           </div>
         </div>
 
@@ -475,10 +474,10 @@
       </section>
     </main>
 
-    <!-- 底部：通信台 -->
+    <!-- Console -->
     <section class="console-card">
       <header class="console-header">
-        <div class="console-title">远程通信台 · 最近 15 条</div>
+        <div class="console-title">Relay Console · Last 15 entries</div>
       </header>
       <div class="console-log" id="console-log">
         <ul id="log-list"></ul>
@@ -486,19 +485,19 @@
     </section>
   </div>
 
-  <!-- Chart.js CDN -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    // ================== 配置 ==================
-    const WEBSOCKET_URL = "wss://YOUR_SERVER_URL_HERE"; // ← 改成你的 WebSocket 地址
+    // ================== Config ==================
+    const WEBSOCKET_URL = "wss://YOUR_SERVER_URL_HERE"; // TODO: set your WebSocket URL
 
-    const MAX_POINTS = 50;      // 图表历史点数（每条线最多 50 个点）
-    const MAX_LOG_LINES = 15;   // 通信台最多显示 15 条
+    const MAX_POINTS = 50;       // max history per chart line
+    const MAX_LOG_LINES = 15;    // max console lines
     const Y_MIN = -50;
     const Y_MAX = 50;
 
-    // 每个通道的颜色（8 个）
+    // 8 fixed colors for 8 channels
     const CHANNEL_COLORS = [
       "#e63946", // ch1
       "#457b9d", // ch2
@@ -510,7 +509,7 @@
       "#8338ec"  // ch8
     ];
 
-    // 状态元素
+    // DOM refs
     const wsStatusDot  = document.getElementById("ws-status-dot");
     const wsStatusText = document.getElementById("ws-status-text");
 
@@ -520,14 +519,14 @@
     const logList = document.getElementById("log-list");
     const consoleLog = document.getElementById("console-log");
 
-    // ================== 工具函数 ==================
+    // ================== Helpers ==================
     function setWsStatus(online) {
       if (online) {
         wsStatusDot.classList.add("online");
-        wsStatusText.textContent = "已连接";
+        wsStatusText.textContent = "Connected";
       } else {
         wsStatusDot.classList.remove("online");
-        wsStatusText.textContent = "断开，重连中...";
+        wsStatusText.textContent = "Disconnected, retrying...";
       }
     }
 
@@ -539,7 +538,7 @@
       return `${hh}:${mm}:${ss}`;
     }
 
-    // 往通信台追加一条记录，并控制最多 15 条
+    // Append console line, keep at most MAX_LOG_LINES
     function addLogLine(tag, message) {
       const li = document.createElement("li");
       li.className = "log-line";
@@ -562,18 +561,16 @@
 
       logList.appendChild(li);
 
-      // ⭐ 超过上限则移除最旧的一条
+      // limit count
       while (logList.children.length > MAX_LOG_LINES) {
         logList.removeChild(logList.firstChild);
       }
 
-      // 自动滚动到底
       consoleLog.scrollTop = consoleLog.scrollHeight;
     }
 
-    // ================== 图表相关 ==================
+    // ================== Charts ==================
     function createDatasets(prefixLabel) {
-      // 为一个 Arduino 创建 8 条通道折线
       return Array.from({ length: 8 }, (_, i) => ({
         label: `${prefixLabel} ch${i + 1}`,
         data: [],
@@ -587,7 +584,7 @@
 
     const chartOptions = {
       responsive: true,
-      maintainAspectRatio: false, // 由 .chart-wrap 控制高度
+      maintainAspectRatio: false,
       animation: false,
       scales: {
         x: {
@@ -640,22 +637,20 @@
       options: chartOptions
     });
 
-    // 往某个图表里推进一组 8 通道数据
     function pushValues(chart, valuesArray) {
       if (!Array.isArray(valuesArray) || valuesArray.length < 8) return;
 
-      // x 轴标签
       const labels = chart.data.labels;
       labels.push("");
       if (labels.length > MAX_POINTS) {
-        labels.shift();   // 删掉最早的 label
+        labels.shift();
       }
 
       chart.data.datasets.forEach((ds, idx) => {
         const v = Number(valuesArray[idx]);
         ds.data.push(isNaN(v) ? null : v);
         if (ds.data.length > MAX_POINTS) {
-          ds.data.shift();   // 删掉最早的数据点
+          ds.data.shift();
         }
       });
 
@@ -671,7 +666,7 @@
       }
     }
 
-    // ================== WebSocket 连接 ==================
+    // ================== WebSocket ==================
     let ws = null;
     let reconnectTimer = null;
 
@@ -679,50 +674,48 @@
       try {
         ws = new WebSocket(WEBSOCKET_URL);
       } catch (e) {
-        console.error("WebSocket 创建失败:", e);
+        console.error("WebSocket creation failed:", e);
         setWsStatus(false);
         return;
       }
 
       ws.onopen = () => {
         setWsStatus(true);
-        addLogLine("SYS", "WebSocket 已连接");
+        addLogLine("SYS", "WebSocket connected");
       };
 
       ws.onclose = () => {
         setWsStatus(false);
-        addLogLine("SYS", "WebSocket 断开，准备重连...");
+        addLogLine("SYS", "WebSocket closed, will retry...");
         if (reconnectTimer) clearTimeout(reconnectTimer);
         reconnectTimer = setTimeout(connectWs, 3000);
       };
 
       ws.onerror = (err) => {
         console.error("WebSocket error:", err);
-        addLogLine("ERR", "WebSocket 发生错误");
+        addLogLine("ERR", "WebSocket error");
       };
 
       ws.onmessage = (event) => {
         const raw = typeof event.data === "string" ? event.data.trim() : "";
         if (!raw) return;
 
-        // 兼容两种格式：
+        // Supported formats:
         // 1) JSON: {"board":"A","values":[24,24,24,24,24,24,24,24]}
-        // 2) 文本: "A:24,24,24,24,24,24,24,24"
+        // 2) Text: "A:24,24,24,24,24,24,24,24"
         let board = null;
         let values = null;
 
-        // 尝试解析 JSON
         if (raw.startsWith("{")) {
           try {
             const obj = JSON.parse(raw);
             board  = obj.board || obj.label || obj.id || null;
             values = Array.isArray(obj.values) ? obj.values : null;
           } catch (e) {
-            // 不是 JSON，就继续用文本解析
+            // fall through to text parsing
           }
         }
 
-        // 文本格式 fallback
         if (!board || !values) {
           const idx = raw.indexOf(":");
           if (idx > 0) {
@@ -732,7 +725,6 @@
           }
         }
 
-        // 无法解析就丢弃
         if (!board || !values || !Array.isArray(values) || values.length < 8) {
           addLogLine("RAW", raw);
           return;
@@ -741,25 +733,23 @@
         if (board === "A" || board === "a") {
           pushValues(chartA, values);
           updateLastValues("A", values);
-          addLogLine("A → 网页", values.join(", "));
+          addLogLine("A → Web", values.join(", "));
         } else if (board === "B" || board === "b") {
           pushValues(chartB, values);
           updateLastValues("B", values);
-          addLogLine("B → 网页", values.join(", "));
+          addLogLine("B → Web", values.join(", "));
         } else {
-          // 未知标签，也打印出来
           addLogLine(board, values.join(", "));
         }
       };
     }
 
-    // 初始化
     setWsStatus(false);
-    addLogLine("SYS", "页面已加载，正在尝试连接 WebSocket...");
+    addLogLine("SYS", "Page loaded, trying to connect WebSocket...");
     connectWs();
 
-    // 如果需要从网页再发数据回 Arduino，可以使用 ws.send(...)
-    // 例如： ws.send(JSON.stringify({ to: "A", cmd: "vibrate", channel: 3 }))
+    // You can send messages back to Arduino:
+    // ws.send(JSON.stringify({ to: "A", cmd: "vibrate", channel: 3 }));
   </script>
 </body>
 </html>
