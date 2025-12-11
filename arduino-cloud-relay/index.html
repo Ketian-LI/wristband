@@ -635,7 +635,7 @@
               </div>
 
               <div class="legend-row">
-                <div>Y-range fixed: -50 ~ 50</div>
+                <div>Y-range fixed: -30 ~ 30</div>
                 <div>Approx. last 2 minutes</div>
               </div>
             </div>
@@ -704,7 +704,7 @@
     </div>
   </div>
 
-  <script>
+<script>
     // =================================================================
     // 1. CONFIGURATION & DOM ELEMENTS
     // =================================================================
@@ -716,12 +716,10 @@
       statusSeal: document.getElementById("status-seal"),
       statusMain: document.getElementById("status-main"),
       statusSub: document.getElementById("status-sub"),
-      mainValue: document.getElementById("main-value"), // Big Number
-      metricParsed: document.getElementById("metric-parsed"), // Latest change text
+      mainValue: document.getElementById("main-value"),
+      metricParsed: document.getElementById("metric-parsed"),
       logA: document.getElementById("log-A"),
       logB: document.getElementById("log-B"),
-      relayA: document.getElementById("relay-A"),
-      relayB: document.getElementById("relay-B"),
       counts: {
         total: document.getElementById("metric-count"),
         A: document.getElementById("metric-count-A"),
@@ -737,22 +735,21 @@
     const commonChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      animation: false, // Disable animation for performance
-      interaction: { mode: 'none' }, // Disable tooltips for performance
+      animation: false, 
+      interaction: { mode: 'none' },
       scales: {
         x: { display: false },
         y: { 
           min: 0, 
-          max: 260, // 0-255 range for sensors
+          max: 260, 
           grid: { color: "rgba(87,64,46,0.1)" },
           ticks: { color: "#5c3d2b", stepSize: 50 } 
         }
       },
       plugins: { legend: { display: false } },
-      elements: { point: { radius: 0 } } // Hide dots, just show line
+      elements: { point: { radius: 0 } } 
     };
 
-    // Initialize Chart A
     const chartA = new Chart(document.getElementById("chartA").getContext("2d"), {
       type: "line",
       data: {
@@ -769,7 +766,6 @@
       options: commonChartOptions
     });
 
-    // Initialize Chart B
     const chartB = new Chart(document.getElementById("chartB").getContext("2d"), {
       type: "line",
       data: {
@@ -786,16 +782,11 @@
       options: commonChartOptions
     });
 
-    // Function to push new data to charts
     function updateChart(role, value) {
       const chart = role === "A" ? chartA : chartB;
       const data = chart.data.datasets[0].data;
-      const labels = chart.data.labels;
-
-      // Shift data (Scroll effect)
       data.shift();
       data.push(value);
-      
       chart.update();
     }
 
@@ -803,13 +794,15 @@
     // 3. RELAY VISUALIZATION (CIRCLES)
     // =================================================================
     
-    // Generate the HTML dots dynamically
     function initRelayDots(containerId) {
       const container = document.getElementById(containerId);
       if(!container) return;
       
-      const radiusMotor = 70; // Outer
-      const radiusSensor = 45; // Inner
+      // Clear previous dots if any (prevents duplicates on reload)
+      container.innerHTML = `<div class="relay-label">${containerId.includes("A") ? "A" : "B"}</div>`;
+
+      const radiusMotor = 70; 
+      const radiusSensor = 45; 
 
       // 8 Motors (Outer Ring)
       for (let i = 0; i < 8; i++) {
@@ -818,6 +811,14 @@
         dot.id = `${containerId}-m-${i}`;
         const angle = (i * (360 / 8)) * (Math.PI / 180);
         dot.style.transform = `translate(${Math.cos(angle)*radiusMotor}px, ${Math.sin(angle)*radiusMotor}px)`;
+        // Basic styles in JS to ensure visibility
+        dot.style.position = "absolute";
+        dot.style.borderRadius = "50%";
+        dot.style.width = "14px";
+        dot.style.height = "14px";
+        dot.style.backgroundColor = "#7a5c4b"; // Default grey/brown
+        dot.style.opacity = "0.2";
+        dot.style.transition = "all 0.1s";
         container.appendChild(dot);
       }
 
@@ -828,17 +829,26 @@
         dot.id = `${containerId}-s-${i}`;
         const angle = (i * (360 / 7)) * (Math.PI / 180);
         dot.style.transform = `translate(${Math.cos(angle)*radiusSensor}px, ${Math.sin(angle)*radiusSensor}px)`;
+        // Basic styles
+        dot.style.position = "absolute";
+        dot.style.borderRadius = "50%";
+        dot.style.width = "10px";
+        dot.style.height = "10px";
+        dot.style.backgroundColor = "#3b2b26"; // Default darker grey
+        dot.style.opacity = "0.2";
+        dot.style.transition = "all 0.1s";
         container.appendChild(dot);
       }
     }
 
-    // Build the visual elements immediately
+    // Initialize immediately
     initRelayDots("relay-A");
     initRelayDots("relay-B");
 
-    // Math: Interpolate 7 inputs -> 8 outputs (Same as Arduino)
     function interpolateTo8(inputArray) {
-      if (!Array.isArray(inputArray) || inputArray.length < 7) return [0,0,0,0,0,0,0,0];
+      // Safety check: if array is too short, return zeros
+      if (!Array.isArray(inputArray)) return [0,0,0,0,0,0,0,0];
+      
       const outputs = [];
       const maxInput = 6;
       const maxMotor = 7;
@@ -848,12 +858,13 @@
         let idxA = Math.min(Math.floor(pos), maxInput);
         let idxB = Math.min(idxA + 1, maxInput);
         let weight = pos - idxA;
-        let valA = inputArray[idxA];
-        let valB = inputArray[idxB];
+        
+        // Handle potentially missing indices (e.g. if array is smaller)
+        let valA = inputArray[idxA] || 0;
+        let valB = inputArray[idxB] || 0;
         
         let blended = (valA * (1 - weight)) + (valB * weight);
         
-        // Suppression logic
         if (idxA !== idxB && valA > 5 && valB > 5) {
            let maxV = Math.max(valA, valB);
            let minV = Math.min(valA, valB);
@@ -867,23 +878,29 @@
 
     // Logic: Update Opacity/Glow
     function updateRelays(role, dataArray) {
-      // 1. Identify IDs
-      // If Role is A: Update Relay-A Inner (Input) AND Relay-B Outer (Output)
-      // If Role is B: Update Relay-B Inner (Input) AND Relay-A Outer (Output)
-      
+      if (!dataArray) return;
+
       const senderId = role === "A" ? "relay-A" : "relay-B";
       const receiverId = role === "A" ? "relay-B" : "relay-A";
-      const activeColor = role === "A" ? "#b5523b" : "#4f7c6b";
+      
+      // Hardcoded Colors to fix "Grey" issue
+      const activeColor = role === "A" ? "#b5523b" : "#4f7c6b"; // Red vs Green
 
       // A. Show SENSOR Inputs (Inner Ring of Sender)
-      dataArray.forEach((val, i) => {
+      // dataArray might have 8 items (with the padding 0), but we only have 7 sensor dots.
+      // We loop 0-6.
+      for(let i=0; i<7; i++) {
+        const val = dataArray[i] || 0;
         const dot = document.getElementById(`${senderId}-s-${i}`);
+        
         if(dot) {
           const alpha = Math.max(0.2, val / 255);
           dot.style.opacity = alpha;
-          dot.style.boxShadow = val > 20 ? `0 0 8px ${activeColor}` : "none";
+          // FORCE COLOR CHANGE
+          dot.style.backgroundColor = activeColor;
+          dot.style.boxShadow = val > 20 ? `0 0 10px ${activeColor}` : "none";
         }
-      });
+      }
 
       // B. Show MOTOR Outputs (Outer Ring of Receiver)
       const motorData = interpolateTo8(dataArray);
@@ -892,8 +909,8 @@
         if(dot) {
           const alpha = Math.max(0.2, val / 255);
           dot.style.opacity = alpha;
-          // Set background color to indicate it's active
-          dot.style.backgroundColor = val > 20 ? activeColor : ""; 
+          // FORCE COLOR CHANGE
+          dot.style.backgroundColor = activeColor; 
           dot.style.boxShadow = val > 20 ? `0 0 12px ${activeColor}` : "none";
         }
       });
@@ -903,7 +920,6 @@
     // 4. WEBSOCKET LOGIC
     // =================================================================
     function connectWS() {
-      // UI Reset
       if(els.statusSeal) {
         els.statusSeal.className = "status-seal";
         els.statusSeal.querySelector("span").textContent = "⏳";
@@ -924,8 +940,7 @@
         try {
           const packet = JSON.parse(event.data);
           
-          // 1. Validate Data
-          if (!packet.role || !Array.isArray(packet.data)) return;
+          if (!packet.role) return;
 
           // Normalize Role (UNO_R4_A -> A)
           let role = "Unknown";
@@ -934,13 +949,22 @@
 
           if(role === "Unknown") return;
 
-          const data = packet.data;
+          // Handle Array Data
+          let data = [];
+          if (Array.isArray(packet.data)) {
+            data = packet.data;
+          } else {
+            // Fallback for single numbers (old version compatibility)
+            // If data is just "123", make it [123, 0, 0...]
+            const val = parseFloat(packet.data) || 0;
+            data = [val, 0, 0, 0, 0, 0, 0]; 
+          }
 
-          // 2. Update Charts (We plot the MAX value to show peak intensity)
+          // 2. Update Charts (Peak value)
           const peakIntensity = Math.max(...data);
           updateChart(role, peakIntensity);
 
-          // 3. Update Text Metrics
+          // 3. Update Text
           els.mainValue.textContent = peakIntensity.toFixed(0);
           els.metricParsed.textContent = `Peak: ${peakIntensity}`;
 
@@ -957,10 +981,11 @@
           const targetLog = role === "A" ? els.logA : els.logB;
           const div = document.createElement("div");
           div.className = "log-entry";
-          div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString('en-GB')}]</span> <span class="text">${JSON.stringify(data)}</span>`;
+          // Only show first 3 nums to keep log clean
+          const cleanData = JSON.stringify(data.slice(0,3)) + "..."; 
+          div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString('en-GB')}]</span> <span class="text">${cleanData}</span>`;
           targetLog.appendChild(div);
           
-          // Auto Scroll Log
           if(targetLog.children.length > 20) targetLog.removeChild(targetLog.firstChild);
           targetLog.scrollTop = targetLog.scrollHeight;
 
@@ -970,16 +995,15 @@
       };
 
       ws.onclose = () => {
-        console.log("WS Closed");
         els.statusSeal.classList.remove("online");
         els.statusSeal.querySelector("span").textContent = "❌";
         els.statusMain.textContent = "Link Lost";
-        setTimeout(connectWS, 3000); // Retry
+        setTimeout(connectWS, 3000);
       };
     }
 
     // Start
     connectWS();
   </script>
-</body>
+  </body>
 </html>
