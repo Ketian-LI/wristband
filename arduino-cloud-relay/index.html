@@ -705,228 +705,140 @@
   </div>
 
   <script>
+    // =================================================================
+    // 1. CONFIGURATION & DOM ELEMENTS
+    // =================================================================
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const WS_URL = `${protocol}://${location.host}/ws`;
 
-    const statusSeal = document.getElementById("status-seal");
-    const statusMain = document.getElementById("status-main");
-    const statusSub = document.getElementById("status-sub");
-
-    const mainValueEl = document.getElementById("main-value");
-    const trendChipEl = document.getElementById("trend-chip");
-    const metricParsedEl = document.getElementById("metric-parsed");
-    const metricParsedMiniEl = document.getElementById("metric-parsed-mini");
-
-    const metricCountTotalEl = document.getElementById("metric-count");
-    const metricCountAEl = document.getElementById("metric-count-A");
-    const metricCountBEl = document.getElementById("metric-count-B");
-
-    const lastSourceEl = document.getElementById("last-source");
-    const lastTimestampEl = document.getElementById("last-timestamp");
-    const metricLastKeyEl = document.getElementById("metric-last-key");
-    const metricLastTeamEl = document.getElementById("metric-last-team");
-
-    const logAEl = document.getElementById("log-A");
-    const logBEl = document.getElementById("log-B");
-
-    let msgCountTotal = 0;
-    const msgCountByRole = { A: 0, B: 0 };
-    const lastNumericByRole = { A: null, B: null };
-
-    function setStatus(online, mainText, subText) {
-      if (online) {
-        statusSeal.classList.add("online");
-        statusSeal.querySelector("span").textContent = "✨";
-      } else {
-        statusSeal.classList.remove("online");
-        statusSeal.querySelector("span").textContent = "⏳";
+    // DOM Elements
+    const els = {
+      statusSeal: document.getElementById("status-seal"),
+      statusMain: document.getElementById("status-main"),
+      statusSub: document.getElementById("status-sub"),
+      mainValue: document.getElementById("main-value"), // Big Number
+      metricParsed: document.getElementById("metric-parsed"), // Latest change text
+      logA: document.getElementById("log-A"),
+      logB: document.getElementById("log-B"),
+      relayA: document.getElementById("relay-A"),
+      relayB: document.getElementById("relay-B"),
+      counts: {
+        total: document.getElementById("metric-count"),
+        A: document.getElementById("metric-count-A"),
+        B: document.getElementById("metric-count-B")
       }
-      statusMain.textContent = mainText;
-      statusSub.textContent = subText || "";
-    }
-
-    function appendLog(roleKey, time, text) {
-      const target = roleKey === "B" ? logBEl : logAEl;
-      const div = document.createElement("div");
-      div.className = "log-entry";
-      const label = roleKey === "A" ? "A" : (roleKey === "B" ? "B" : "?");
-      div.innerHTML =
-        `<span class="time">[${time}]</span> ` +
-        `<span class="source">${label}</span> ` +
-        `<span class="text">→ ${text}</span>`;
-      target.appendChild(div);
-
-      const MAX_LOG_LINES = 50;
-      while (target.children.length > MAX_LOG_LINES) {
-        target.removeChild(target.firstChild);
-      }
-      target.scrollTop = target.scrollHeight;
-    }
-
-    // ----- Chart.js: 两张图（A / B） -----
-    const ctxA = document.getElementById("chartA").getContext("2d");
-    const ctxB = document.getElementById("chartB").getContext("2d");
-
-    const chartDataA = {
-      labels: [],
-      datasets: [
-        {
-          label: "Party A",
-          data: [],
-          tension: 0.25,
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          borderColor: "#b5523b",
-          backgroundColor: "rgba(181, 82, 59, 0.24)"
-        }
-      ]
     };
 
-    const chartDataB = {
-      labels: [],
-      datasets: [
-        {
-          label: "Party B",
-          data: [],
-          tension: 0.25,
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          borderColor: "#4f7c6b",
-          backgroundColor: "rgba(79, 124, 107, 0.24)"
-        }
-      ]
-    };
+    let msgCounts = { total: 0, A: 0, B: 0 };
 
-    const baseChartOptions = {
+    // =================================================================
+    // 2. CHART.JS SETUP
+    // =================================================================
+    const commonChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 180 },
+      animation: false, // Disable animation for performance
+      interaction: { mode: 'none' }, // Disable tooltips for performance
       scales: {
         x: { display: false },
-        y: {
-          min: -50,
-          max: 50,
-          grid: { color: "rgba(87,64,46,0.25)" },
-          ticks: {
-            color: "#5c3d2b",
-            font: { size: 10 }
-          }
+        y: { 
+          min: 0, 
+          max: 260, // 0-255 range for sensors
+          grid: { color: "rgba(87,64,46,0.1)" },
+          ticks: { color: "#5c3d2b", stepSize: 50 } 
         }
       },
-      plugins: { legend: { display: false } }
+      plugins: { legend: { display: false } },
+      elements: { point: { radius: 0 } } // Hide dots, just show line
     };
 
-    const chartA = new Chart(ctxA, {
+    // Initialize Chart A
+    const chartA = new Chart(document.getElementById("chartA").getContext("2d"), {
       type: "line",
-      data: chartDataA,
-      options: baseChartOptions
+      data: {
+        labels: Array(50).fill(""),
+        datasets: [{
+          data: Array(50).fill(0),
+          borderColor: "#b5523b", // Party A Red
+          backgroundColor: "rgba(181, 82, 59, 0.2)",
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2
+        }]
+      },
+      options: commonChartOptions
     });
 
-    const chartB = new Chart(ctxB, {
+    // Initialize Chart B
+    const chartB = new Chart(document.getElementById("chartB").getContext("2d"), {
       type: "line",
-      data: chartDataB,
-      options: baseChartOptions
+      data: {
+        labels: Array(50).fill(""),
+        datasets: [{
+          data: Array(50).fill(0),
+          borderColor: "#4f7c6b", // Party B Green
+          backgroundColor: "rgba(79, 124, 107, 0.2)",
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2
+        }]
+      },
+      options: commonChartOptions
     });
 
-    function clampValue(v) {
-      if (v > 50) return 50;
-      if (v < -50) return -50;
-      return v;
+    // Function to push new data to charts
+    function updateChart(role, value) {
+      const chart = role === "A" ? chartA : chartB;
+      const data = chart.data.datasets[0].data;
+      const labels = chart.data.labels;
+
+      // Shift data (Scroll effect)
+      data.shift();
+      data.push(value);
+      
+      chart.update();
     }
 
-    function pushChartValue(roleKey, v) {
-      if (v === null || isNaN(v)) return;
-      v = clampValue(v);
-
-      const MAX_POINTS = 120;
-      const nowLabel = new Date().toLocaleTimeString("en-GB", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-
-      if (roleKey === "A") {
-        chartDataA.labels.push(nowLabel);
-        chartDataA.datasets[0].data.push(v);
-        if (chartDataA.labels.length > MAX_POINTS) {
-          chartDataA.labels.shift();
-          chartDataA.datasets[0].data.shift();
-        }
-        chartA.update("none");
-      } else if (roleKey === "B") {
-        chartDataB.labels.push(nowLabel);
-        chartDataB.datasets[0].data.push(v);
-        if (chartDataB.labels.length > MAX_POINTS) {
-          chartDataB.labels.shift();
-          chartDataB.datasets[0].data.shift();
-        }
-        chartB.update("none");
-      }
-    }
-
-    // ----- 辅助函数 -----
-    function parseNumeric(text) {
-      const match = text.match(/(-?\d+(\.\d+)?)(?!.*\d)/);
-      if (!match) return null;
-      return parseFloat(match[1]);
-    }
-
-    function mapRoleToTeamLabel(role) {
-      if (role === "A") return "Party A";
-      if (role === "B") return "Party B";
-      return role || "Unknown party";
-    }
-
-    function guessKeyWord(text) {
-      const parts = text.split(":");
-      if (parts.length <= 1) return text.slice(0, 12) || "—";
-      return parts.slice(1).join(":").trim().slice(0, 12) || "—";
-    }
-// --- RELAY VISUALIZATION LOGIC ---
+    // =================================================================
+    // 3. RELAY VISUALIZATION (CIRCLES)
+    // =================================================================
     
-    // 1. Generate the HTML dots
-    function initRelay(elementId) {
-      const container = document.getElementById(elementId);
-      const radiusMotor = 70; // Outer ring radius
-      const radiusSensor = 45; // Inner ring radius
+    // Generate the HTML dots dynamically
+    function initRelayDots(containerId) {
+      const container = document.getElementById(containerId);
+      if(!container) return;
+      
+      const radiusMotor = 70; // Outer
+      const radiusSensor = 45; // Inner
 
-      // Create 8 Motor Dots (Outer)
+      // 8 Motors (Outer Ring)
       for (let i = 0; i < 8; i++) {
         const dot = document.createElement("div");
         dot.className = "dot motor";
-        dot.id = `${elementId}-m-${i}`;
-        // Calculate position
+        dot.id = `${containerId}-m-${i}`;
         const angle = (i * (360 / 8)) * (Math.PI / 180);
-        const x = Math.cos(angle) * radiusMotor;
-        const y = Math.sin(angle) * radiusMotor;
-        dot.style.transform = `translate(${x}px, ${y}px)`;
+        dot.style.transform = `translate(${Math.cos(angle)*radiusMotor}px, ${Math.sin(angle)*radiusMotor}px)`;
         container.appendChild(dot);
       }
 
-      // Create 7 Sensor Dots (Inner)
+      // 7 Sensors (Inner Ring)
       for (let i = 0; i < 7; i++) {
         const dot = document.createElement("div");
         dot.className = "dot sensor";
-        dot.id = `${elementId}-s-${i}`;
+        dot.id = `${containerId}-s-${i}`;
         const angle = (i * (360 / 7)) * (Math.PI / 180);
-        const x = Math.cos(angle) * radiusSensor;
-        const y = Math.sin(angle) * radiusSensor;
-        dot.style.transform = `translate(${x}px, ${y}px)`;
+        dot.style.transform = `translate(${Math.cos(angle)*radiusSensor}px, ${Math.sin(angle)*radiusSensor}px)`;
         container.appendChild(dot);
       }
     }
 
-    // Initialize immediately
-    initRelay("relay-A");
-    initRelay("relay-B");
+    // Build the visual elements immediately
+    initRelayDots("relay-A");
+    initRelayDots("relay-B");
 
-    // 2. Interpolation Logic (Mirroring C++ code)
+    // Math: Interpolate 7 inputs -> 8 outputs (Same as Arduino)
     function interpolateTo8(inputArray) {
-      if (!Array.isArray(inputArray) || inputArray.length !== 7) return [0,0,0,0,0,0,0,0];
-      
+      if (!Array.isArray(inputArray) || inputArray.length < 7) return [0,0,0,0,0,0,0,0];
       const outputs = [];
       const maxInput = 6;
       const maxMotor = 7;
@@ -936,14 +848,12 @@
         let idxA = Math.min(Math.floor(pos), maxInput);
         let idxB = Math.min(idxA + 1, maxInput);
         let weight = pos - idxA;
-
         let valA = inputArray[idxA];
         let valB = inputArray[idxB];
-
-        // Standard Blend
+        
         let blended = (valA * (1 - weight)) + (valB * weight);
-
-        // "Dual Touch" Suppression (Visual only)
+        
+        // Suppression logic
         if (idxA !== idxB && valA > 5 && valB > 5) {
            let maxV = Math.max(valA, valB);
            let minV = Math.min(valA, valB);
@@ -955,141 +865,120 @@
       return outputs;
     }
 
-    // 3. Update Function
-    function updateVisuals(role, dataArray) {
-      if(!dataArray) return;
-
-      // Define who is sending (Touching) and who is receiving (Vibrating)
+    // Logic: Update Opacity/Glow
+    function updateRelays(role, dataArray) {
+      // 1. Identify IDs
+      // If Role is A: Update Relay-A Inner (Input) AND Relay-B Outer (Output)
+      // If Role is B: Update Relay-B Inner (Input) AND Relay-A Outer (Output)
+      
       const senderId = role === "A" ? "relay-A" : "relay-B";
       const receiverId = role === "A" ? "relay-B" : "relay-A";
-      
-      const colorActive = role === "A" ? "#b5523b" : "#4f7c6b"; // Red for A, Green for B
+      const activeColor = role === "A" ? "#b5523b" : "#4f7c6b";
 
-      // Update Sender INNER ring (Sensors)
+      // A. Show SENSOR Inputs (Inner Ring of Sender)
       dataArray.forEach((val, i) => {
         const dot = document.getElementById(`${senderId}-s-${i}`);
         if(dot) {
-          const alpha = Math.max(0.2, val / 255); // Min opacity 0.2
+          const alpha = Math.max(0.2, val / 255);
           dot.style.opacity = alpha;
-          // Glow if active
-          dot.style.boxShadow = val > 10 ? `0 0 10px ${colorActive}` : "none";
+          dot.style.boxShadow = val > 20 ? `0 0 8px ${activeColor}` : "none";
         }
       });
 
-      // Calculate Interpolation for Receiver
-      const motorValues = interpolateTo8(dataArray);
-
-      // Update Receiver OUTER ring (Motors)
-      motorValues.forEach((val, i) => {
+      // B. Show MOTOR Outputs (Outer Ring of Receiver)
+      const motorData = interpolateTo8(dataArray);
+      motorData.forEach((val, i) => {
         const dot = document.getElementById(`${receiverId}-m-${i}`);
         if(dot) {
           const alpha = Math.max(0.2, val / 255);
           dot.style.opacity = alpha;
-          dot.style.backgroundColor = val > 10 ? colorActive : ""; // Light up with sender's color
+          // Set background color to indicate it's active
+          dot.style.backgroundColor = val > 20 ? activeColor : ""; 
+          dot.style.boxShadow = val > 20 ? `0 0 12px ${activeColor}` : "none";
         }
       });
     }
 
-    // ----- WebSocket -----
+    // =================================================================
+    // 4. WEBSOCKET LOGIC
+    // =================================================================
     function connectWS() {
-      setStatus(false, "Linking Ritual", "Summoning the cloud relay circle…");
+      // UI Reset
+      if(els.statusSeal) {
+        els.statusSeal.className = "status-seal";
+        els.statusSeal.querySelector("span").textContent = "⏳";
+        els.statusMain.textContent = "Connecting...";
+      }
 
       const ws = new WebSocket(WS_URL);
 
-      ws.addEventListener("open", () => {
-        setStatus(true, "Link Established", "The relay circle is stable. Listening to dragon and party pulses.");
-      });
+      ws.onopen = () => {
+        console.log("WS Connected");
+        els.statusSeal.classList.add("online");
+        els.statusSeal.querySelector("span").textContent = "✨";
+        els.statusMain.textContent = "Link Established";
+        els.statusSub.textContent = "Parties are synced.";
+      };
 
-      ws.addEventListener("message", (event) => {
-        const raw = event.data;
-        let role = "Unknown";
-        let text = raw;
-
-        // 优先尝试 JSON: { role: "A"/"B", data: "..." }
-        // ... inside ws.onmessage ...
+      ws.onmessage = (event) => {
         try {
-          const obj = JSON.parse(raw);
-          if (obj && typeof obj === "object" && "data" in obj) {
-            
-            // [NEW] Parse the array for visualization
-            let dataArray = null;
-            if (Array.isArray(obj.data)) {
-               dataArray = obj.data;
-            } 
-            
-            text = String(obj.data);
-            if (obj.role) role = String(obj.role);
+          const packet = JSON.parse(event.data);
+          
+          // 1. Validate Data
+          if (!packet.role || !Array.isArray(packet.data)) return;
 
-            // [NEW] Trigger the visual update
-            let rKey = (role === "A" || role === "UNO_R4_A") ? "A" : "B";
-            if (dataArray) updateVisuals(rKey, dataArray);
-          }
-        } catch (e) { /* ... */ }
-        // ... rest of code ...
+          // Normalize Role (UNO_R4_A -> A)
+          let role = "Unknown";
+          if (packet.role.includes("A")) role = "A";
+          if (packet.role.includes("B")) role = "B";
 
-        let roleKey = "Unknown";
-        if (role === "A" || role === "UNO_R4_A") roleKey = "A";
-        else if (role === "B" || role === "UNO_R4_B") roleKey = "B";
+          if(role === "Unknown") return;
 
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString("en-GB", { hour12: false });
+          const data = packet.data;
 
-        // 计数
-        msgCountTotal += 1;
-        metricCountTotalEl.textContent = msgCountTotal.toString();
+          // 2. Update Charts (We plot the MAX value to show peak intensity)
+          const peakIntensity = Math.max(...data);
+          updateChart(role, peakIntensity);
 
-        if (roleKey === "A" || roleKey === "B") {
-          msgCountByRole[roleKey] += 1;
-          if (roleKey === "A") {
-            metricCountAEl.textContent = msgCountByRole.A.toString();
-          } else {
-            metricCountBEl.textContent = msgCountByRole.B.toString();
-          }
+          // 3. Update Text Metrics
+          els.mainValue.textContent = peakIntensity.toFixed(0);
+          els.metricParsed.textContent = `Peak: ${peakIntensity}`;
+
+          // 4. Update Counters
+          msgCounts.total++;
+          msgCounts[role]++;
+          els.counts.total.textContent = msgCounts.total;
+          els.counts[role].textContent = msgCounts[role];
+
+          // 5. Update Relays (The Visuals!)
+          updateRelays(role, data);
+
+          // 6. Logs
+          const targetLog = role === "A" ? els.logA : els.logB;
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString('en-GB')}]</span> <span class="text">${JSON.stringify(data)}</span>`;
+          targetLog.appendChild(div);
+          
+          // Auto Scroll Log
+          if(targetLog.children.length > 20) targetLog.removeChild(targetLog.firstChild);
+          targetLog.scrollTop = targetLog.scrollHeight;
+
+        } catch (e) {
+          console.error("Parse Error", e);
         }
+      };
 
-        const val = parseNumeric(text);
-        const teamLabel = mapRoleToTeamLabel(roleKey === "Unknown" ? role : roleKey);
-        const key = guessKeyWord(text);
-
-        metricLastKeyEl.textContent = key;
-        metricLastTeamEl.textContent = teamLabel;
-        lastSourceEl.textContent = teamLabel;
-        lastTimestampEl.textContent = timeStr;
-
-        if (val !== null) {
-          const vClamped = clampValue(val);
-          mainValueEl.textContent = vClamped.toFixed(0);
-          metricParsedEl.textContent = `${vClamped.toFixed(2)} sigils`;
-          metricParsedMiniEl.textContent = vClamped.toFixed(2);
-
-          const prev = lastNumericByRole[roleKey] ?? null;
-          if (prev !== null) {
-            const diff = vClamped - prev;
-            const sign = diff >= 0 ? "+" : "";
-            trendChipEl.style.display = "inline-block";
-            trendChipEl.textContent = `Δ ${sign}${diff.toFixed(2)} (${roleKey || "?"})`;
-          }
-          lastNumericByRole[roleKey] = vClamped;
-
-          pushChartValue(roleKey, vClamped);
-        } else {
-          metricParsedEl.textContent = "—";
-          metricParsedMiniEl.textContent = "—";
-        }
-
-        appendLog(roleKey, timeStr, text);
-      });
-
-      ws.addEventListener("close", () => {
-        setStatus(false, "Link Lost", "The circle has broken. Re-drawing runes in a few seconds…");
-        setTimeout(connectWS, 3000);
-      });
-
-      ws.addEventListener("error", () => {
-        setStatus(false, "Ritual Error", "Arcane disturbance detected. Please try again later.");
-      });
+      ws.onclose = () => {
+        console.log("WS Closed");
+        els.statusSeal.classList.remove("online");
+        els.statusSeal.querySelector("span").textContent = "❌";
+        els.statusMain.textContent = "Link Lost";
+        setTimeout(connectWS, 3000); // Retry
+      };
     }
 
+    // Start
     connectWS();
   </script>
 </body>
