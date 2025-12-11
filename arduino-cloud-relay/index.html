@@ -888,23 +888,36 @@
         return outputs;
     }
 
-    function updateVisuals(role, dataArray) {
+function updateVisuals(role, dataArray) {
         if (!dataArray) return;
 
-        // Determine IDs
         const senderId = role === "A" ? "relay-A" : "relay-B";
         const receiverId = role === "A" ? "relay-B" : "relay-A";
-        const activeColor = role === "A" ? "#b5523b" : "#4f7c6b"; // Red vs Green
+        const activeColor = role === "A" ? "#b5523b" : "#4f7c6b"; 
+        
+        // SENSITIVITY SETTINGS
+        // We consider '25' to be the max brightness for visualization purposes
+        const MAX_VISUAL_VAL = 25.0; 
 
         // 1. Update SENDER INNER RING (Input Sensors)
         for(let i=0; i<7; i++) {
             const dot = document.getElementById(`${senderId}-s-${i}`);
             const val = dataArray[i] || 0;
             if(dot) {
-                const alpha = Math.max(0.2, val / 255);
+                // Scale opacity: 0-25 maps to 0.2-1.0
+                const intensity = Math.min(val / MAX_VISUAL_VAL, 1.0); 
+                const alpha = 0.2 + (0.8 * intensity); 
+                
                 dot.style.opacity = alpha;
-                dot.style.backgroundColor = val > 15 ? activeColor : "#3b2b26";
-                dot.style.boxShadow = val > 15 ? `0 0 10px ${activeColor}` : "none";
+                
+                // Turn on color if there is ANY signal (> 1)
+                if (val > 1) {
+                    dot.style.backgroundColor = activeColor;
+                    dot.style.boxShadow = `0 0 ${val * 0.5}px ${activeColor}`;
+                } else {
+                    dot.style.backgroundColor = "#3b2b26"; // Reset to grey
+                    dot.style.boxShadow = "none";
+                }
             }
         }
 
@@ -913,10 +926,19 @@
         motorData.forEach((val, i) => {
             const dot = document.getElementById(`${receiverId}-m-${i}`);
             if(dot) {
-                const alpha = Math.max(0.2, val / 255);
+                const intensity = Math.min(val / MAX_VISUAL_VAL, 1.0);
+                const alpha = 0.2 + (0.8 * intensity);
+                
                 dot.style.opacity = alpha;
-                dot.style.backgroundColor = val > 15 ? activeColor : "#7a5c4b";
-                dot.style.boxShadow = val > 15 ? `0 0 12px ${activeColor}` : "none";
+                
+                if (val > 1) {
+                    dot.style.backgroundColor = activeColor;
+                    // Make the glow radius dynamic based on signal strength
+                    dot.style.boxShadow = `0 0 ${val * 0.8}px ${activeColor}`;
+                } else {
+                    dot.style.backgroundColor = "#7a5c4b"; // Reset to grey
+                    dot.style.boxShadow = "none";
+                }
             }
         });
     }
