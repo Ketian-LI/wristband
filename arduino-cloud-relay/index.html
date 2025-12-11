@@ -706,29 +706,34 @@
 
 <script>
     // =================================================================
-    // 1. WAIT FOR PAGE LOAD (Fixes the "Grey/Missing Dots" issue)
+    // 1. BOOTSTRAP
     // =================================================================
     document.addEventListener("DOMContentLoaded", () => {
-        console.log("Page Loaded. Initializing System...");
-        initAll(); // Build the visual elements
-        connectWS(); // Start the connection
+        console.log("System Initialized.");
+        initAll(); 
+        connectWS(); 
     });
 
     // =================================================================
-    // 2. CONFIGURATION & STATE
+    // 2. CONFIGURATION
     // =================================================================
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const WS_URL = `${protocol}://${location.host}/ws`;
+    
+    // VISUAL SETTINGS
+    const MAX_VAL = 25; // Chart and Visual max sensitivity
+    const COLOR_A = "#ff6b6b"; // Bright Red/Orange
+    const COLOR_B = "#4cd137"; // Bright Green
 
     // Global State
     let msgCounts = { total: 0, A: 0, B: 0 };
     let chartA, chartB;
 
     // =================================================================
-    // 3. INITIALIZATION FUNCTION
+    // 3. INITIALIZATION
     // =================================================================
     function initAll() {
-        // --- A. Setup Charts ---
+        // --- Setup Charts ---
         const commonChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
@@ -738,18 +743,16 @@
                 x: { display: false },
                 y: { 
                     min: 0, 
-                    max: 260, 
+                    max: MAX_VAL, // [CHANGED] Set to 25
                     grid: { color: "rgba(87,64,46,0.1)" },
-                    ticks: { color: "#5c3d2b", stepSize: 50 } 
+                    ticks: { color: "#5c3d2b", stepSize: 5 } 
                 }
             },
             plugins: { legend: { display: false } },
-            elements: { point: { radius: 0 } }
+            elements: { point: { radius: 0 }, line: { borderWidth: 2 } }
         };
 
         const ctxA = document.getElementById("chartA");
-        const ctxB = document.getElementById("chartB");
-
         if (ctxA) {
             chartA = new Chart(ctxA.getContext("2d"), {
                 type: "line",
@@ -757,17 +760,17 @@
                     labels: Array(50).fill(""),
                     datasets: [{
                         data: Array(50).fill(0),
-                        borderColor: "#b5523b",
-                        backgroundColor: "rgba(181, 82, 59, 0.2)",
+                        borderColor: COLOR_A,
+                        backgroundColor: "rgba(255, 107, 107, 0.2)",
                         fill: true,
-                        tension: 0.3,
-                        borderWidth: 2
+                        tension: 0.3
                     }]
                 },
                 options: commonChartOptions
             });
         }
 
+        const ctxB = document.getElementById("chartB");
         if (ctxB) {
             chartB = new Chart(ctxB.getContext("2d"), {
                 type: "line",
@@ -775,90 +778,60 @@
                     labels: Array(50).fill(""),
                     datasets: [{
                         data: Array(50).fill(0),
-                        borderColor: "#4f7c6b",
-                        backgroundColor: "rgba(79, 124, 107, 0.2)",
+                        borderColor: COLOR_B,
+                        backgroundColor: "rgba(76, 209, 55, 0.2)",
                         fill: true,
-                        tension: 0.3,
-                        borderWidth: 2
+                        tension: 0.3
                     }]
                 },
                 options: commonChartOptions
             });
         }
 
-        // --- B. Build Relay Circles ---
+        // --- Build Relay Circles ---
         buildRelayDots("relay-A");
         buildRelayDots("relay-B");
     }
 
-    // Function to physically create the dots in the HTML
     function buildRelayDots(containerId) {
         const container = document.getElementById(containerId);
-        if (!container) {
-            console.error(`❌ Error: Container ${containerId} not found!`);
-            return;
-        }
+        if (!container) return;
 
-        console.log(`Building dots for ${containerId}...`);
-        
-        // Reset container content but keep the label
+        // Label
         const labelText = containerId.includes("A") ? "A" : "B";
-        container.innerHTML = `<div class="relay-label" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.5rem; opacity:0.3; pointer-events:none;">${labelText}</div>`;
+        container.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.5rem; opacity:0.3; pointer-events:none; font-weight:bold;">${labelText}</div>`;
 
-        const radiusMotor = 70; // Outer
-        const radiusSensor = 45; // Inner
+        const radiusMotor = 70; 
+        const radiusSensor = 45; 
 
-        // Create 8 Motors (Outer)
-        for (let i = 0; i < 8; i++) {
+        // Helper to create dot
+        const createDot = (type, i, r) => {
             const dot = document.createElement("div");
-            dot.id = `${containerId}-m-${i}`;
+            dot.id = `${containerId}-${type}-${i}`;
             dot.style.position = "absolute";
-            dot.style.width = "14px";
-            dot.style.height = "14px";
+            dot.style.width = type === 'm' ? "14px" : "10px";
+            dot.style.height = type === 'm' ? "14px" : "10px";
             dot.style.borderRadius = "50%";
-            dot.style.backgroundColor = "#7a5c4b"; // Base Color
+            dot.style.backgroundColor = type === 'm' ? "#7a5c4b" : "#3b2b26"; // Default Off Color
             dot.style.opacity = "0.2";
             dot.style.transition = "background-color 0.1s, opacity 0.1s, box-shadow 0.1s";
             
-            // Math for positioning
-            const angle = (i * (360 / 8)) * (Math.PI / 180);
-            const x = Math.cos(angle) * radiusMotor;
-            const y = Math.sin(angle) * radiusMotor;
-            
-            // Center the dot
-            dot.style.left = "50%";
-            dot.style.top = "50%";
-            dot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-            
-            container.appendChild(dot);
-        }
-
-        // Create 7 Sensors (Inner)
-        for (let i = 0; i < 7; i++) {
-            const dot = document.createElement("div");
-            dot.id = `${containerId}-s-${i}`;
-            dot.style.position = "absolute";
-            dot.style.width = "10px";
-            dot.style.height = "10px";
-            dot.style.borderRadius = "50%";
-            dot.style.backgroundColor = "#3b2b26"; // Base Color
-            dot.style.opacity = "0.2";
-            dot.style.transition = "background-color 0.1s, opacity 0.1s, box-shadow 0.1s";
-
-            const angle = (i * (360 / 7)) * (Math.PI / 180);
-            const x = Math.cos(angle) * radiusSensor;
-            const y = Math.sin(angle) * radiusSensor;
+            const angle = (i * (360 / (type==='m'?8:7))) * (Math.PI / 180);
+            const x = Math.cos(angle) * r;
+            const y = Math.sin(angle) * r;
             
             dot.style.left = "50%";
             dot.style.top = "50%";
             dot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-
             container.appendChild(dot);
-        }
+        };
+
+        for (let i = 0; i < 8; i++) createDot('m', i, radiusMotor); // Motors
+        for (let i = 0; i < 7; i++) createDot('s', i, radiusSensor); // Sensors
     }
 
     // =================================================================
-    // 4. MATH & LOGIC
+    // 4. LOGIC
     // =================================================================
     function interpolateTo8(inputArray) {
         if (!Array.isArray(inputArray)) return [0,0,0,0,0,0,0,0];
@@ -888,55 +861,47 @@
         return outputs;
     }
 
-function updateVisuals(role, dataArray) {
+    function updateVisuals(role, dataArray) {
         if (!dataArray) return;
 
         const senderId = role === "A" ? "relay-A" : "relay-B";
         const receiverId = role === "A" ? "relay-B" : "relay-A";
-        const activeColor = role === "A" ? "#b5523b" : "#4f7c6b"; 
-        
-        // SENSITIVITY SETTINGS
-        // We consider '25' to be the max brightness for visualization purposes
-        const MAX_VISUAL_VAL = 25.0; 
+        const activeColor = role === "A" ? COLOR_A : COLOR_B;
 
-        // 1. Update SENDER INNER RING (Input Sensors)
+        // 1. Update SENDER Inner Ring (Inputs)
         for(let i=0; i<7; i++) {
             const dot = document.getElementById(`${senderId}-s-${i}`);
             const val = dataArray[i] || 0;
             if(dot) {
-                // Scale opacity: 0-25 maps to 0.2-1.0
-                const intensity = Math.min(val / MAX_VISUAL_VAL, 1.0); 
-                const alpha = 0.2 + (0.8 * intensity); 
+                // [CHANGED] Sensitivity: Cap at MAX_VAL (25)
+                const intensity = Math.min(val / MAX_VAL, 1.0);
                 
-                dot.style.opacity = alpha;
+                // [CHANGED] Brighter floor (0.3)
+                dot.style.opacity = 0.3 + (0.7 * intensity);
                 
-                // Turn on color if there is ANY signal (> 1)
                 if (val > 1) {
                     dot.style.backgroundColor = activeColor;
-                    dot.style.boxShadow = `0 0 ${val * 0.5}px ${activeColor}`;
+                    dot.style.boxShadow = `0 0 ${8 * intensity}px ${activeColor}`;
                 } else {
-                    dot.style.backgroundColor = "#3b2b26"; // Reset to grey
+                    dot.style.backgroundColor = "#3b2b26";
                     dot.style.boxShadow = "none";
                 }
             }
         }
 
-        // 2. Update RECEIVER OUTER RING (Output Motors)
+        // 2. Update RECEIVER Outer Ring (Outputs)
         const motorData = interpolateTo8(dataArray);
         motorData.forEach((val, i) => {
             const dot = document.getElementById(`${receiverId}-m-${i}`);
             if(dot) {
-                const intensity = Math.min(val / MAX_VISUAL_VAL, 1.0);
-                const alpha = 0.2 + (0.8 * intensity);
-                
-                dot.style.opacity = alpha;
+                const intensity = Math.min(val / MAX_VAL, 1.0);
+                dot.style.opacity = 0.3 + (0.7 * intensity);
                 
                 if (val > 1) {
                     dot.style.backgroundColor = activeColor;
-                    // Make the glow radius dynamic based on signal strength
-                    dot.style.boxShadow = `0 0 ${val * 0.8}px ${activeColor}`;
+                    dot.style.boxShadow = `0 0 ${12 * intensity}px ${activeColor}`;
                 } else {
-                    dot.style.backgroundColor = "#7a5c4b"; // Reset to grey
+                    dot.style.backgroundColor = "#7a5c4b";
                     dot.style.boxShadow = "none";
                 }
             }
@@ -944,13 +909,12 @@ function updateVisuals(role, dataArray) {
     }
 
     // =================================================================
-    // 5. WEBSOCKET CONNECTION
+    // 5. CONNECTION
     // =================================================================
     function connectWS() {
         const els = {
             seal: document.getElementById("status-seal"),
             main: document.getElementById("status-main"),
-            sub: document.getElementById("status-sub"),
             val: document.getElementById("main-value"),
             parsed: document.getElementById("metric-parsed"),
             logA: document.getElementById("log-A"),
@@ -960,15 +924,11 @@ function updateVisuals(role, dataArray) {
             cntB: document.getElementById("metric-count-B"),
         };
 
-        if(els.seal) {
-            els.seal.classList.remove("online");
-            els.main.textContent = "Connecting...";
-        }
+        if(els.seal) els.seal.classList.remove("online");
 
         const ws = new WebSocket(WS_URL);
 
         ws.onopen = () => {
-            console.log("✅ WS Connected");
             if(els.seal) {
                 els.seal.classList.add("online");
                 els.seal.querySelector("span").textContent = "✨";
@@ -981,13 +941,12 @@ function updateVisuals(role, dataArray) {
                 const packet = JSON.parse(event.data);
                 if (!packet.role) return;
 
-                // Normalize Role
                 let role = "Unknown";
                 if (packet.role.includes("A")) role = "A";
                 if (packet.role.includes("B")) role = "B";
                 if(role === "Unknown") return;
 
-                // Handle Data format
+                // Handle Data
                 let data = [];
                 if (Array.isArray(packet.data)) {
                     data = packet.data;
@@ -996,9 +955,9 @@ function updateVisuals(role, dataArray) {
                     data = [v, 0, 0, 0, 0, 0, 0];
                 }
 
-                // --- UPDATE UI COMPONENTS ---
-                
-                // 1. Update Chart
+                // --- UI UPDATES ---
+
+                // 1. Chart
                 const targetChart = role === "A" ? chartA : chartB;
                 if (targetChart) {
                     const peak = Math.max(...data);
@@ -1006,21 +965,25 @@ function updateVisuals(role, dataArray) {
                     ds.shift();
                     ds.push(peak);
                     targetChart.update();
-                    
+
                     if(els.val) els.val.textContent = peak.toFixed(0);
-                    if(els.parsed) els.parsed.textContent = `Peak: ${peak}`;
+                    if(els.parsed) els.parsed.textContent = `Peak: ${peak.toFixed(1)}`;
                 }
 
-                // 2. Update Counts
+                // 2. Counters [FIXED]
                 msgCounts.total++;
                 msgCounts[role]++;
+                
                 if(els.cntTotal) els.cntTotal.textContent = msgCounts.total;
-                if(els.cntA) els.cntA.textContent = msgCounts[role];
+                
+                // Explicitly update the correct element
+                if (role === "A" && els.cntA) els.cntA.textContent = msgCounts.A;
+                if (role === "B" && els.cntB) els.cntB.textContent = msgCounts.B;
 
-                // 3. Update Visuals (The Circles)
+                // 3. Visuals
                 updateVisuals(role, data);
 
-                // 4. Update Logs
+                // 4. Logs
                 const targetLog = role === "A" ? els.logA : els.logB;
                 if (targetLog) {
                     const div = document.createElement("div");
@@ -1032,17 +995,11 @@ function updateVisuals(role, dataArray) {
                     targetLog.scrollTop = targetLog.scrollHeight;
                 }
 
-            } catch (e) {
-                console.error("Msg Error:", e);
-            }
+            } catch (e) { console.error(e); }
         };
 
         ws.onclose = () => {
-            console.log("❌ WS Closed. Retrying...");
-            if(els.seal) {
-                els.seal.classList.remove("online");
-                els.main.textContent = "Link Lost";
-            }
+            if(els.seal) els.seal.classList.remove("online");
             setTimeout(connectWS, 3000);
         };
     }
