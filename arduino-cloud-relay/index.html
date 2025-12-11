@@ -472,6 +472,67 @@
       letter-spacing: 0.16em;
       color: var(--ink-muted);
     }
+	/* --- ARCANE RELAY VISUALIZER --- */
+    .relay-stage {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 20px 0;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .relay-unit {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .relay-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Common Dot Styles */
+    .dot {
+      position: absolute;
+      border-radius: 50%;
+      transition: background-color 0.1s, box-shadow 0.1s, opacity 0.1s;
+    }
+
+    /* Motor (Outer Ring) */
+    .dot.motor {
+      width: 14px;
+      height: 14px;
+      background: var(--ink-muted);
+      opacity: 0.2; /* Base dim opacity */
+    }
+
+    /* Sensor (Inner Ring) */
+    .dot.sensor {
+      width: 10px;
+      height: 10px;
+      background: var(--ink-main);
+      opacity: 0.2;
+    }
+
+    /* Party A Specifics */
+    .relay-unit.party-A .dot.motor { box-shadow: 0 0 8px var(--block-dragon); }
+    .relay-unit.party-A .dot.sensor { background: var(--block-dragon); }
+    
+    /* Party B Specifics */
+    .relay-unit.party-B .dot.motor { box-shadow: 0 0 8px var(--block-magic); }
+    .relay-unit.party-B .dot.sensor { background: var(--block-magic); }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -503,6 +564,28 @@
       </div>
 
       <div class="map-grid">
+	  <div class="panel" style="grid-column: span 2;"> <div class="panel-inner">
+            <div class="panel-heading">
+              <div class="panel-title">Arcane Relays</div>
+              <div class="panel-tag">Live Haptic Feedback</div>
+            </div>
+            
+            <div class="relay-stage">
+              <div class="relay-unit party-A" id="relay-A">
+                <div class="relay-label">A</div>
+                </div>
+
+              <div class="relay-unit party-B" id="relay-B">
+                <div class="relay-label">B</div>
+                </div>
+            </div>
+            
+            <div class="legend-row" style="justify-content: center; gap: 20px;">
+              <div>Outer Ring: 8 Motors (Output)</div>
+              <div>Inner Ring: 7 Sensors (Input)</div>
+            </div>
+          </div>
+        </div>
         <!-- 左：两个图表 -->
         <div class="panel">
           <div class="panel-inner">
@@ -802,6 +885,110 @@
       if (parts.length <= 1) return text.slice(0, 12) || "—";
       return parts.slice(1).join(":").trim().slice(0, 12) || "—";
     }
+// --- RELAY VISUALIZATION LOGIC ---
+    
+    // 1. Generate the HTML dots
+    function initRelay(elementId) {
+      const container = document.getElementById(elementId);
+      const radiusMotor = 70; // Outer ring radius
+      const radiusSensor = 45; // Inner ring radius
+
+      // Create 8 Motor Dots (Outer)
+      for (let i = 0; i < 8; i++) {
+        const dot = document.createElement("div");
+        dot.className = "dot motor";
+        dot.id = `${elementId}-m-${i}`;
+        // Calculate position
+        const angle = (i * (360 / 8)) * (Math.PI / 180);
+        const x = Math.cos(angle) * radiusMotor;
+        const y = Math.sin(angle) * radiusMotor;
+        dot.style.transform = `translate(${x}px, ${y}px)`;
+        container.appendChild(dot);
+      }
+
+      // Create 7 Sensor Dots (Inner)
+      for (let i = 0; i < 7; i++) {
+        const dot = document.createElement("div");
+        dot.className = "dot sensor";
+        dot.id = `${elementId}-s-${i}`;
+        const angle = (i * (360 / 7)) * (Math.PI / 180);
+        const x = Math.cos(angle) * radiusSensor;
+        const y = Math.sin(angle) * radiusSensor;
+        dot.style.transform = `translate(${x}px, ${y}px)`;
+        container.appendChild(dot);
+      }
+    }
+
+    // Initialize immediately
+    initRelay("relay-A");
+    initRelay("relay-B");
+
+    // 2. Interpolation Logic (Mirroring C++ code)
+    function interpolateTo8(inputArray) {
+      if (!Array.isArray(inputArray) || inputArray.length !== 7) return [0,0,0,0,0,0,0,0];
+      
+      const outputs = [];
+      const maxInput = 6;
+      const maxMotor = 7;
+
+      for (let m = 0; m < 8; m++) {
+        let pos = (m * maxInput) / maxMotor;
+        let idxA = Math.min(Math.floor(pos), maxInput);
+        let idxB = Math.min(idxA + 1, maxInput);
+        let weight = pos - idxA;
+
+        let valA = inputArray[idxA];
+        let valB = inputArray[idxB];
+
+        // Standard Blend
+        let blended = (valA * (1 - weight)) + (valB * weight);
+
+        // "Dual Touch" Suppression (Visual only)
+        if (idxA !== idxB && valA > 5 && valB > 5) {
+           let maxV = Math.max(valA, valB);
+           let minV = Math.min(valA, valB);
+           let factor = 1.0 - (0.5 * (minV / maxV));
+           blended *= factor;
+        }
+        outputs.push(blended);
+      }
+      return outputs;
+    }
+
+    // 3. Update Function
+    function updateVisuals(role, dataArray) {
+      if(!dataArray) return;
+
+      // Define who is sending (Touching) and who is receiving (Vibrating)
+      const senderId = role === "A" ? "relay-A" : "relay-B";
+      const receiverId = role === "A" ? "relay-B" : "relay-A";
+      
+      const colorActive = role === "A" ? "#b5523b" : "#4f7c6b"; // Red for A, Green for B
+
+      // Update Sender INNER ring (Sensors)
+      dataArray.forEach((val, i) => {
+        const dot = document.getElementById(`${senderId}-s-${i}`);
+        if(dot) {
+          const alpha = Math.max(0.2, val / 255); // Min opacity 0.2
+          dot.style.opacity = alpha;
+          // Glow if active
+          dot.style.boxShadow = val > 10 ? `0 0 10px ${colorActive}` : "none";
+        }
+      });
+
+      // Calculate Interpolation for Receiver
+      const motorValues = interpolateTo8(dataArray);
+
+      // Update Receiver OUTER ring (Motors)
+      motorValues.forEach((val, i) => {
+        const dot = document.getElementById(`${receiverId}-m-${i}`);
+        if(dot) {
+          const alpha = Math.max(0.2, val / 255);
+          dot.style.opacity = alpha;
+          dot.style.backgroundColor = val > 10 ? colorActive : ""; // Light up with sender's color
+        }
+      });
+    }
 
     // ----- WebSocket -----
     function connectWS() {
@@ -819,15 +1006,26 @@
         let text = raw;
 
         // 优先尝试 JSON: { role: "A"/"B", data: "..." }
+        // ... inside ws.onmessage ...
         try {
           const obj = JSON.parse(raw);
           if (obj && typeof obj === "object" && "data" in obj) {
+            
+            // [NEW] Parse the array for visualization
+            let dataArray = null;
+            if (Array.isArray(obj.data)) {
+               dataArray = obj.data;
+            } 
+            
             text = String(obj.data);
             if (obj.role) role = String(obj.role);
+
+            // [NEW] Trigger the visual update
+            let rKey = (role === "A" || role === "UNO_R4_A") ? "A" : "B";
+            if (dataArray) updateVisuals(rKey, dataArray);
           }
-        } catch (e) {
-          // 不是 JSON，就当作纯文本
-        }
+        } catch (e) { /* ... */ }
+        // ... rest of code ...
 
         let roleKey = "Unknown";
         if (role === "A" || role === "UNO_R4_A") roleKey = "A";
